@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertTriangle, ChevronDown, MessageSquare, RefreshCcw, Search, Upload } from 'lucide-react'
+import { useState } from "react"
+import ClientTradesDrawer from "@/components/clients/client-trades-drawer"
 
 type ClientRow = {
   id: string
@@ -14,24 +16,29 @@ type ClientRow = {
   totalDays: number
   rm: string
   risk: "Aggressive" | "Conservative" | "Moderate"
+  phone?: string
+  email?: string
   noContract?: boolean
   unread?: boolean
 }
 
 const clients: ClientRow[] = [
-  { id: "1", name: "Liam Anderson", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", unread: true },
-  { id: "2", name: "Roopkumari Shankar", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", noContract: true },
-  { id: "3", name: "Coop Cooper", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive" },
-  { id: "4", name: "Shawn Hennasey", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive" },
-  { id: "5", name: "Shawn Hennasey", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Virendra Pal", risk: "Conservative" },
-  { id: "6", name: "Shawn Hennasey", plan: "Lite", daysLeft: 29, totalDays: 90, rm: "Virendra Pal", risk: "Conservative" },
-  { id: "7", name: "Shawn Hennasey", plan: "Lite", daysLeft: 59, totalDays: 120, rm: "Virendra Pal", risk: "Conservative" },
-  { id: "8", name: "Shawn Hennasey", plan: "Lite", daysLeft: 29, totalDays: 90, rm: "Virendra Pal", risk: "Conservative" },
-  { id: "9", name: "Shawn Hennasey", plan: "Lite", daysLeft: 29, totalDays: 90, rm: "Virendra Pal", risk: "Conservative" },
-  { id: "10", name: "Shawn Hennasey", plan: "Lite", daysLeft: 29, totalDays: 90, rm: "Virendra Pal", risk: "Conservative" },
+  { id: "1", name: "Liam Anderson", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", unread: true, phone: "+91-9876543210", email: "liam.anderson@email.com" },
+  { id: "2", name: "Roopkumari Shankar", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", noContract: true, phone: "+91-9876500001", email: "r.shankar@email.com" },
+  { id: "3", name: "Coop Cooper", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", phone: "+91-9876500002", email: "coop.cooper@email.com" },
+  { id: "4", name: "Shawn Hennasey", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", phone: "+91-9876500003", email: "shawn.h@email.com" },
+  { id: "5", name: "Shawn Hennasey", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Virendra Pal", risk: "Conservative", phone: "+91-9876500004", email: "shawn2@email.com" },
 ]
 
 export default function ClientsPage() {
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [activeClient, setActiveClient] = useState<ClientRow | null>(null)
+
+  function openActionsDrawer(client: ClientRow) {
+    setActiveClient(client)
+    setDrawerOpen(true)
+  }
+
   return (
     <div className="min-h-screen bg-[#f9fafb] text-[#101828]">
       <div className="mx-auto flex">
@@ -139,8 +146,9 @@ export default function ClientsPage() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         className="relative rounded-md p-2 text-[#667085] hover:bg-[#f2f4f7]"
-                        aria-label="Open chat"
-                        title="Chat"
+                        aria-label="Open actions"
+                        title="Open actions"
+                        onClick={() => openActionsDrawer(c)}
                       >
                         <MessageSquare className="h-4 w-4" />
                         {c.unread && (
@@ -155,6 +163,24 @@ export default function ClientsPage() {
           </section>
         </main>
       </div>
+
+      {/* Right-side drawer for a single client */}
+      <ClientTradesDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        client={
+          activeClient
+            ? {
+                id: activeClient.id,
+                name: activeClient.name,
+                phone: activeClient.phone,
+                email: activeClient.email,
+                plan: activeClient.plan,
+                risk: activeClient.risk,
+              }
+            : null
+        }
+      />
     </div>
   )
 }
