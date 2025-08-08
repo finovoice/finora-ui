@@ -9,17 +9,20 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { Flag, Clock3, Target, Ban, Bike, Layers3, Send, UsersRound } from 'lucide-react'
 import ScripCombobox from "./scrip-combobox"
+import type { PreviewDraft } from "./preview-panel"
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   initialSymbol?: string
+  onRecipientsClick?: (draft: PreviewDraft) => void
 }
 
-export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }: Props) {
+export default function CreateTradeDialog({ open, onOpenChange, initialSymbol, onRecipientsClick }: Props) {
   const [order, setOrder] = useState<"BUY" | "SELL" | "HOLD">("BUY")
   const [horizon, setHorizon] = useState<"INTRADAY" | "SWING" | "LONGTERM">("INTRADAY")
   const [scrip, setScrip] = useState<string | undefined>(initialSymbol)
+  const [segment, setSegment] = useState<"EQUITY" | "F&O">("EQUITY")
   const [entryMin, setEntryMin] = useState<string>("")
   const [entryMax, setEntryMax] = useState<string>("")
   const [useRange, setUseRange] = useState<boolean>(false)
@@ -35,16 +38,25 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
   }
 
   function onSend() {
-    // For demo purposes only
-    console.log({
-      order,
-      horizon,
+    // demo only
+    console.log("send draft")
+    onOpenChange(false)
+  }
+
+  function handoffToRecipients() {
+    const draft: PreviewDraft = {
+      side: order,
       scrip,
-      entry: useRange ? [entryMin, entryMax] : [entryMin],
+      segment,
+      horizon,
+      entryMin,
+      entryMax: useRange ? entryMax : undefined,
       stoploss,
       targets,
-    })
+      rr: "2/3",
+    }
     onOpenChange(false)
+    onRecipientsClick?.(draft)
   }
 
   return (
@@ -154,13 +166,14 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
         {/* Footer */}
         <div className="border-t border-[#e4e7ec] bg-[#0b1220] bg-opacity-[0.04] px-4 py-4">
           <div className="mx-2 flex items-center gap-3 rounded-lg border border-[#e4e7ec] bg-white px-2 py-2">
-            <div className="flex-1 flex items-center gap-2">
-              <UsersRound className="ml-2 h-4 w-4 text-[#98a2b3]" />
-              <Input
-                className="h-10 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                placeholder="Select recipients"
-              />
-            </div>
+            <button
+              type="button"
+              onClick={handoffToRecipients}
+              className="flex flex-1 items-center gap-2 rounded-md px-2 text-left"
+            >
+              <UsersRound className="ml-1 h-4 w-4 text-[#98a2b3]" />
+              <span className="text-sm text-[#98a2b3]">Select recipients</span>
+            </button>
             <Button
               type="button"
               onClick={onSend}

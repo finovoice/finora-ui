@@ -1,26 +1,28 @@
 "use client"
 
-import { useMemo } from "react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { LayoutDashboard, Waypoints, Users, ShoppingBag, Settings, LogOut } from 'lucide-react'
 import Brand from "@/components/brand"
 
+type Item = {
+  id: string
+  label: string
+  icon: any
+  href: string
+}
+
 export default function Sidebar() {
-  const nav = useMemo(
-    () => [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, active: false },
-      { id: "trades", label: "Trades", icon: Waypoints, active: true },
-      { id: "clients", label: "Clients", icon: Users, active: false },
-      { id: "sales", label: "Sales", icon: ShoppingBag, active: false },
-    ],
-    [],
-  )
+  const pathname = usePathname()
+  const nav: Item[] = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/" },
+    { id: "trades", label: "Trades", icon: Waypoints, href: "/" }, // root shows Trades
+    { id: "clients", label: "Clients", icon: Users, href: "/clients" },
+    { id: "sales", label: "Sales", icon: ShoppingBag, href: "/sales" },
+  ]
 
   return (
-    <aside
-      className="hidden md:flex w-[208px] shrink-0 flex-col border-r border-[#e4e7ec] bg-white"
-      aria-label="Sidebar"
-    >
+    <aside className="hidden md:flex w-[208px] shrink-0 flex-col border-r border-[#e4e7ec] bg-white" aria-label="Sidebar">
       <div className="px-4 py-4">
         <Brand />
       </div>
@@ -28,18 +30,23 @@ export default function Sidebar() {
         <ul className="space-y-1">
           {nav.map((item) => {
             const Icon = item.icon
-            const activeClasses = item.active
+            const isActive =
+              item.href === "/"
+                ? pathname === "/" // highlight Trades at root
+                : pathname.startsWith(item.href)
+            const activeClasses = isActive
               ? "bg-[#f9f5ff] text-[#6941c6] border border-[#e9d7fe]"
               : "text-[#344054] hover:bg-[#f2f4f7]"
             return (
               <li key={item.id}>
-                <button
+                <Link
+                  href={item.href}
                   className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm ${activeClasses}`}
-                  aria-current={item.active ? "page" : undefined}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.label}</span>
-                </button>
+                </Link>
               </li>
             )
           })}
@@ -49,6 +56,7 @@ export default function Sidebar() {
         <ul className="space-y-1">
           <li>
             <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]">
+              {/* Settings and Logout remain decorative here */}
               <Settings className="h-4 w-4" />
               <span>Settings</span>
             </button>

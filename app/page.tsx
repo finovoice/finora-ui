@@ -1,12 +1,12 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { BadgePercent, Check, ChevronDown, ChevronUp, Clock3, Edit3, EllipsisVertical, Flag, LogOut, RefreshCcw, Search, Send, Settings, Share2, ShoppingBag, Users, LayoutDashboard, Waypoints } from 'lucide-react'
 import Sidebar from "@/components/sidebar"
 import TradeItem from "@/components/trade-item"
 import CreateTradeDialog from "@/components/create-trade-dialog"
 import { useState } from "react"
+import { ChevronDown, RefreshCcw, Search, Send } from 'lucide-react'
+import PreviewPanel, { type PreviewDraft } from "@/components/preview-panel"
 
 export default function Page() {
   const trades = [
@@ -14,7 +14,7 @@ export default function Page() {
       id: "t1",
       side: "BUY" as const,
       symbol: "TATACHEM 25JAN FUT",
-      segment: "F&O",
+      segment: "F&O" as const,
       intraday: true,
       equity: false,
       expanded: false,
@@ -24,7 +24,7 @@ export default function Page() {
       id: "t2",
       side: "BUY" as const,
       symbol: "TATACHEM 25JAN FUT",
-      segment: "F&O",
+      segment: "F&O" as const,
       intraday: true,
       equity: false,
       expanded: true,
@@ -38,7 +38,7 @@ export default function Page() {
       id: "t3",
       side: "BUY" as const,
       symbol: "TATACHEM 25JAN FUT",
-      segment: "EQUITY",
+      segment: "EQUITY" as const,
       intraday: true,
       equity: true,
       expanded: false,
@@ -48,6 +48,18 @@ export default function Page() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [initialSymbol, setInitialSymbol] = useState<string | undefined>(undefined)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewDraft, setPreviewDraft] = useState<PreviewDraft | null>(null)
+
+  function openCreate(symbol?: string) {
+    setInitialSymbol(symbol)
+    setCreateOpen(true)
+  }
+
+  function handoffToPreview(draft: PreviewDraft) {
+    setPreviewDraft(draft)
+    setPreviewOpen(true)
+  }
 
   return (
     <div className="min-h-screen bg-[#f9fafb] text-[#101828]">
@@ -68,7 +80,7 @@ export default function Page() {
                 <Button
                   className="h-9 gap-2 rounded-md bg-[#7f56d9] text-white hover:bg-[#6941c6]"
                   type="button"
-                  onClick={() => { setInitialSymbol(undefined); setCreateOpen(true) }}
+                  onClick={() => openCreate(undefined)}
                 >
                   <Send className="h-4 w-4" />
                   Send trade
@@ -101,13 +113,29 @@ export default function Page() {
           <section className="px-6 py-4">
             <div className="flex flex-col gap-3">
               {trades.map((t) => (
-                <TradeItem key={t.id} trade={t} onOpen={() => { setInitialSymbol(t.symbol.split(" ")[0]); setCreateOpen(true) }} />
+                <TradeItem
+                  key={t.id}
+                  trade={t}
+                  onOpen={() => openCreate(t.symbol.split(" ")[0])}
+                />
               ))}
             </div>
           </section>
 
           {/* Dialog */}
-          <CreateTradeDialog open={createOpen} onOpenChange={setCreateOpen} initialSymbol={initialSymbol} />
+          <CreateTradeDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            initialSymbol={initialSymbol}
+            onRecipientsClick={handoffToPreview}
+          />
+
+          {/* Preview overlay */}
+          <PreviewPanel
+            open={previewOpen}
+            onClose={() => setPreviewOpen(false)}
+            draft={previewDraft}
+          />
         </main>
       </div>
     </div>
