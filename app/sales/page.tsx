@@ -77,10 +77,10 @@ export default function SalesPage() {
           </header>
 
           <main className="px-6 py-4">
-            {/* Vertically stacked stages */}
-            <div className="flex flex-col gap-4">
+            {/* Horizontally arranged columns */}
+            <div className="flex gap-4 overflow-x-auto">
               {columns.map((col) => (
-                <section key={col.id} className="rounded-lg border border-[#e4e7ec] bg-white">
+                <section key={col.id} className="flex-1 min-w-[280px] rounded-lg border border-[#e4e7ec] bg-white">
                   <div className="flex items-center justify-between px-3 py-2">
                     <h2 className="text-sm font-medium text-[#1f2937]">
                       {col.title}{" "}
