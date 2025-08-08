@@ -5,12 +5,12 @@ export type LeadCardProps = {
   date?: string
   owner?: string
   hot?: boolean
-  tier?: "Elite" | "Premium" | "Standard"
+  tier?: "Elite" | "Premium" | "Standard" | undefined
 }
 
 export default function LeadCard({ name, date = "27th Jan 2025", owner = "Olivia Rhye", hot = false, tier = "Elite" }: LeadCardProps) {
   return (
-    <div className="rounded-lg border border-[#e4e7ec] bg-white p-3">
+    <div className="rounded-lg border border-[#e4e7ec] bg-white p-3 hover:shadow-sm transition-shadow">
       <div className="flex items-center justify-between">
         <h4 className="text-[15px] font-medium text-[#1f2937]">{name}</h4>
         <RefreshCw className="h-3.5 w-3.5 text-[#98a2b3]" />

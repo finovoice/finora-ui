@@ -5,40 +5,50 @@ import { Input } from "@/components/ui/input"
 import LeadCard, { type LeadCardProps } from "@/components/sales/lead-card"
 import Sidebar from "@/components/sidebar"
 import { ChevronDown, Upload, RotateCcw, Search } from 'lucide-react'
+import LeadDrawer, { type Lead } from "@/components/sales/lead-drawer"
+import { useState } from "react"
 
 export default function SalesPage() {
   const columns: {
     id: string
     title: string
-    leads: LeadCardProps[]
+    leads: (LeadCardProps & { phone?: string; email?: string; stage?: Lead["stage"] })[]
   }[] = [
     {
       id: "leads",
       title: "Leads",
       leads: [
-        { name: "Liam Anderson", hot: false, tier: undefined },
-        { name: "Mia Wilson", hot: false, tier: undefined },
+        { name: "Liam Anderson", hot: false, tier: undefined, phone: "+91-9876543210", email: "liam.anderson@email.com", stage: "Lead" },
+        { name: "Mia Wilson", hot: false, tier: undefined, phone: "+91-9876500000", email: "mia.wilson@email.com", stage: "Lead" },
       ],
     },
     {
       id: "contacted",
       title: "Contacted",
       leads: [
-        { name: "Noah Thompson", hot: true, tier: "Elite" },
-        { name: "Fenton Jinwell", hot: false, tier: undefined },
+        { name: "Noah Thompson", hot: true, tier: "Elite", phone: "+91-9876500123", email: "noah.thompson@email.com", stage: "Contacted" },
+        { name: "Fenton Jinwell", hot: false, tier: undefined, phone: "+91-9876512345", email: "fenton.j@email.com", stage: "Contacted" },
       ],
     },
     {
       id: "onboarding",
       title: "Onboarding",
-      leads: [{ name: "Aiden Carter", hot: true, tier: "Elite" }],
+      leads: [{ name: "Aiden Carter", hot: true, tier: "Elite", phone: "+91-9898989898", email: "aiden.carter@email.com", stage: "Onboarding" }],
     },
     {
       id: "awaiting",
       title: "Awaiting payment",
-      leads: [{ name: "Sophie Vergara", hot: false, tier: "Elite" }],
+      leads: [{ name: "Sophie Vergara", hot: false, tier: "Elite", phone: "+91-9988776655", email: "sophie.v@email.com", stage: "Awaiting payment" }],
     },
   ]
+
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [activeLead, setActiveLead] = useState<Lead | null>(null)
+
+  function openDrawer(lead: Lead) {
+    setActiveLead(lead)
+    setDrawerOpen(true)
+  }
 
   return (
     <div className="min-h-screen bg-[#f9fafb]">
@@ -77,10 +87,10 @@ export default function SalesPage() {
           </header>
 
           <main className="px-6 py-4">
-            {/* Horizontally arranged columns */}
-            <div className="flex gap-4 overflow-x-auto">
+            {/* Use your preferred horizontal or vertical layout; this keeps columns flexible */}
+            <div className="flex flex-col gap-4 xl:grid xl:grid-cols-4">
               {columns.map((col) => (
-                <section key={col.id} className="flex-1 min-w-[280px] rounded-lg border border-[#e4e7ec] bg-white">
+                <section key={col.id} className="rounded-lg border border-[#e4e7ec] bg-white">
                   <div className="flex items-center justify-between px-3 py-2">
                     <h2 className="text-sm font-medium text-[#1f2937]">
                       {col.title}{" "}
@@ -92,7 +102,13 @@ export default function SalesPage() {
                   </div>
                   <div className="space-y-3 border-t border-[#f2f4f7] p-3">
                     {col.leads.map((lead) => (
-                      <LeadCard key={lead.name} {...lead} />
+                      <button
+                        key={lead.name}
+                        onClick={() => openDrawer({ name: lead.name, phone: lead.phone, email: lead.email, stage: lead.stage })}
+                        className="block w-full text-left"
+                      >
+                        <LeadCard {...lead} />
+                      </button>
                     ))}
                   </div>
                 </section>
@@ -101,6 +117,9 @@ export default function SalesPage() {
           </main>
         </div>
       </div>
+
+      {/* Right-hand drawer */}
+      <LeadDrawer open={drawerOpen} onOpenChange={setDrawerOpen} lead={activeLead} />
     </div>
   )
 }
