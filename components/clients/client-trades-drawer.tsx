@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChevronDown, Mail, Phone, PencilLine, Send, Clock3, Flag, TrendingUp, LogOut } from 'lucide-react'
 
@@ -55,9 +55,9 @@ export default function ClientTradesDrawer({
         <div className="flex items-start justify-between border-b border-[#e4e7ec] px-5 py-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="truncate text-[18px] font-semibold text-[#101828]">
+              <SheetTitle className="truncate text-[18px] font-semibold text-[#101828]">
                 {client?.name ?? "Liam Anderson"}
-              </h2>
+              </SheetTitle>
               <button aria-label="Edit name" className="rounded p-1 text-[#667085] hover:bg-[#f2f4f7]">
                 <PencilLine className="h-4 w-4" />
               </button>
@@ -89,6 +89,9 @@ export default function ClientTradesDrawer({
             <TabsList className="bg-transparent p-0">
               <TabsTrigger value="chat" className="rounded-none px-3 py-3 data-[state=active]:border-b data-[state=active]:border-[#7f56d9] data-[state=active]:text-[#7f56d9]">
                 Chat
+                <span className="ml-1 inline-grid h-4 min-w-4 place-items-center rounded-full bg-[#f2f4f7] px-1 text-[10px] text-[#475467]">
+                  1
+                </span>
               </TabsTrigger>
               <TabsTrigger value="trades" className="rounded-none px-3 py-3 data-[state=active]:border-b data-[state=active]:border-[#7f56d9] data-[state=active]:text-[#7f56d9]">
                 Trades
