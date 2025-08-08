@@ -54,4 +54,28 @@ function SheetContent({
   )
 }
 
-export { Sheet, SheetTrigger, SheetClose, SheetContent }
+function SheetHeader({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn("flex flex-col gap-2 px-6 py-4", className)}
+      {...props}
+    />
+  )
+}
+
+function SheetTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Title>) {
+  return (
+    <SheetPrimitive.Title
+      className={cn("text-lg font-semibold leading-none", className)}
+      {...props}
+    />
+  )
+}
+
+export { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetTitle }
