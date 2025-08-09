@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Waypoints, Users, ShoppingBag, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Waypoints, Users, ShoppingBag, Settings, LogOut } from "lucide-react"
 import Brand from "@/components/brand"
 
 type Item = {
@@ -15,14 +15,17 @@ type Item = {
 export default function Sidebar() {
   const pathname = usePathname()
   const nav: Item[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/" },
-    { id: "trades", label: "Trades", icon: Waypoints, href: "/" }, // root shows Trades
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    { id: "trades", label: "Trades", icon: Waypoints, href: "/" },
     { id: "clients", label: "Clients", icon: Users, href: "/clients" },
     { id: "sales", label: "Sales", icon: ShoppingBag, href: "/sales" },
   ]
 
   return (
-    <aside className="hidden md:flex w-[208px] shrink-0 flex-col border-r border-[#e4e7ec] bg-white" aria-label="Sidebar">
+    <aside
+      className="hidden md:flex w-[208px] shrink-0 flex-col border-r border-[#e4e7ec] bg-white"
+      aria-label="Sidebar"
+    >
       <div className="px-4 py-4">
         <Brand />
       </div>
@@ -30,10 +33,7 @@ export default function Sidebar() {
         <ul className="space-y-1">
           {nav.map((item) => {
             const Icon = item.icon
-            const isActive =
-              item.href === "/"
-                ? pathname === "/" // highlight Trades at root
-                : pathname.startsWith(item.href)
+            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"))
             const activeClasses = isActive
               ? "bg-[#f9f5ff] text-[#6941c6] border border-[#e9d7fe]"
               : "text-[#344054] hover:bg-[#f2f4f7]"
