@@ -23,6 +23,6 @@ export const loginAPI = async (email: string, password: string): Promise<{ valid
     }
     return {
         valid: true,
-        token: result.token
+        token: result.data.access
     };
 }
