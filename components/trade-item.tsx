@@ -2,10 +2,9 @@
 
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ChevronDown, ChevronUp, Clock3, Edit3, EllipsisVertical, Flag, Share2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clock3, Edit3, EllipsisVertical, Flag, Share2 } from "lucide-react"
 
-type Trade = {
+export type Trade = {
   id: string
   side: "BUY" | "SELL"
   symbol: string
@@ -20,7 +19,11 @@ type Trade = {
   riskReward?: string
 }
 
-export default function TradeItem({ trade, onOpen }: { trade: Trade; onOpen?: () => void }) {
+export default function TradeItem({
+  trade,
+  onOpen,
+  onEdit,
+}: { trade: Trade; onOpen?: () => void; onEdit?: (trade: Trade) => void }) {
   const [open, setOpen] = useState<boolean>(!!trade.expanded)
 
   return (
@@ -53,7 +56,14 @@ export default function TradeItem({ trade, onOpen }: { trade: Trade; onOpen?: ()
               <button className="rounded-md p-2 hover:bg-[#f2f4f7]" aria-label="Share">
                 <Share2 className="h-4 w-4" />
               </button>
-              <button className="rounded-md p-2 hover:bg-[#f2f4f7]" aria-label="Edit">
+              <button
+                className="rounded-md p-2 hover:bg-[#f2f4f7]"
+                aria-label="Edit"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit?.(trade)
+                }}
+              >
                 <Edit3 className="h-4 w-4" />
               </button>
               <button className="rounded-md p-2 hover:bg-[#f2f4f7]" aria-label="History">
@@ -63,7 +73,10 @@ export default function TradeItem({ trade, onOpen }: { trade: Trade; onOpen?: ()
           )}
           <button
             className="rounded-md p-2 hover:bg-[#f2f4f7]"
-            onClick={(e) => { e.stopPropagation(); setOpen((s) => !s) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen((s) => !s)
+            }}
             aria-expanded={open}
             aria-label={open ? "Collapse trade details" : "Expand trade details"}
           >

@@ -4,8 +4,10 @@ import { Input } from "@/components/ui/input"
 import Sidebar from "@/components/sidebar"
 import TradeItem from "@/components/trade-item"
 import CreateTradeDialog from "@/components/create-trade-dialog"
+import EditTradeDialog, { type EditableTrade } from "@/components/edit-trade-dialog"
+import type { Trade } from "@/components/trade-item"
 import { useState } from "react"
-import { ChevronDown, RefreshCcw, Search, Send } from 'lucide-react'
+import { ChevronDown, RefreshCcw, Search, Send } from "lucide-react"
 import PreviewPanel, { type PreviewDraft } from "@/components/preview-panel"
 
 export default function Page() {
@@ -50,6 +52,8 @@ export default function Page() {
   const [initialSymbol, setInitialSymbol] = useState<string | undefined>(undefined)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewDraft, setPreviewDraft] = useState<PreviewDraft | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editTrade, setEditTrade] = useState<EditableTrade | null>(null)
 
   function openCreate(symbol?: string) {
     setInitialSymbol(symbol)
@@ -59,6 +63,22 @@ export default function Page() {
   function handoffToPreview(draft: PreviewDraft) {
     setPreviewDraft(draft)
     setPreviewOpen(true)
+  }
+
+  function openEdit(t: Trade) {
+    const editable: EditableTrade = {
+      id: t.id,
+      side: t.side,
+      scrip: t.symbol,
+      horizon: "INTRADAY",
+      entryMin: "80150",
+      entryMax: "80312",
+      useRange: true,
+      stoploss: t.stoploss ?? "80000",
+      targets: t.targets ? t.targets.split("»").map((s) => s.trim()) : ["82000", "103000"],
+    }
+    setEditTrade(editable)
+    setEditOpen(true)
   }
 
   return (
@@ -117,6 +137,7 @@ export default function Page() {
                   key={t.id}
                   trade={t}
                   onOpen={() => openCreate(t.symbol.split(" ")[0])}
+                  onEdit={() => openEdit(t)}
                 />
               ))}
             </div>
@@ -130,12 +151,18 @@ export default function Page() {
             onRecipientsClick={handoffToPreview}
           />
 
-          {/* Preview overlay */}
-          <PreviewPanel
-            open={previewOpen}
-            onClose={() => setPreviewOpen(false)}
-            draft={previewDraft}
+          {/* Edit Dialog */}
+          <EditTradeDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            trade={editTrade ?? undefined}
+            onSubmit={(updated) => {
+              console.log("updated trade", updated)
+            }}
           />
+
+          {/* Preview overlay */}
+          <PreviewPanel open={previewOpen} onClose={() => setPreviewOpen(false)} draft={previewDraft} />
         </main>
       </div>
     </div>
