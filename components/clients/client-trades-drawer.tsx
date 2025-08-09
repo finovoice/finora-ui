@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TabsContent } from "@/components/ui/tabs"
 import { ChevronDown, Mail, Phone, PencilLine, Send, Clock3, Flag, TrendingUp, LogOut, RefreshCcw } from 'lucide-react'
+import PlanDetailsModal from "./plan-details-modal"
 
 type Client = {
   id: string
@@ -48,6 +49,8 @@ export default function ClientTradesDrawer({
       collapsed: false,
     },
   ]
+
+  const [renewOpen, setRenewOpen] = React.useState(false)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -249,7 +252,7 @@ export default function ClientTradesDrawer({
                 <div className="rounded-xl border border-[#e4e7ec] bg-white">
                   <div className="flex items-center justify-between border-b border-[#eef2f7] px-4 py-3">
                     <div className="text-sm font-medium text-[#667085]">Active plan</div>
-                    <button className="inline-flex items-center gap-2 rounded-md border border-[#e4e7ec] bg-white px-3 py-1.5 text-sm text-[#344054] hover:bg-[#f2f4f7]">
+                    <button onClick={() => setRenewOpen(true)} className="inline-flex items-center gap-2 rounded-md border border-[#e4e7ec] bg-white px-3 py-1.5 text-sm text-[#344054] hover:bg-[#f2f4f7]">
                       <RefreshCcw className="h-4 w-4 text-[#7f56d9]" />
                       Renew
                     </button>
@@ -306,6 +309,7 @@ export default function ClientTradesDrawer({
             </TabsContent>
           </Tabs>
         </div>
+        <PlanDetailsModal open={renewOpen} onOpenChange={setRenewOpen} />
       </SheetContent>
     </Sheet>
   )
