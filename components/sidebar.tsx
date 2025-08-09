@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import {usePathname, useRouter} from "next/navigation"
 import { LayoutDashboard, Waypoints, Users, ShoppingBag, Settings, LogOut } from "lucide-react"
 import Brand from "@/components/brand"
+import {signOut} from "@/lib/axiosClient";
 
 type Item = {
   id: string
@@ -14,6 +15,8 @@ type Item = {
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter();
+
   const nav: Item[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     { id: "trades", label: "Trades", icon: Waypoints, href: "/" },
@@ -62,7 +65,10 @@ export default function Sidebar() {
             </button>
           </li>
           <li>
-            <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]">
+            <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]" onClick={() => {
+                signOut()
+                router.push("/login")
+            }}>
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
             </button>

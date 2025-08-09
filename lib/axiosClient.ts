@@ -37,4 +37,10 @@ const getAuthToken = (): string | null => {
   return null;
 };
 
+export const signOut = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('accessToken');
+};
+
+
 export default ApiClient
