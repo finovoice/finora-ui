@@ -48,6 +48,3 @@ export const startServerAPI = async () => {
         console.warn(`Error occurred while getting image generation status`, error);
     }
 };
-
-
-
