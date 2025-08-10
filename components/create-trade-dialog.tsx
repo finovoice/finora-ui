@@ -7,18 +7,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
-import { Flag, Clock3, Target, Ban, Bike, Layers3, Send, UsersRound } from 'lucide-react'
+import { Flag, Clock3, Ban, Bike, Layers3, Send } from 'lucide-react'
 import ScripCombobox from "./scrip-combobox"
-import type { PreviewDraft } from "./preview-panel"
+import { RecipientsSelect, type Recipient } from "./recipients-select"
+import { createTradeAPI } from "@/services/trades"
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   initialSymbol?: string
-  onRecipientsClick?: (draft: PreviewDraft) => void
 }
 
-export default function CreateTradeDialog({ open, onOpenChange, initialSymbol, onRecipientsClick }: Props) {
+export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }: Props) {
   const [order, setOrder] = useState<"BUY" | "SELL" | "HOLD">("BUY")
   const [horizon, setHorizon] = useState<"INTRADAY" | "SWING" | "LONGTERM">("INTRADAY")
   const [scrip, setScrip] = useState<string | undefined>(initialSymbol)
@@ -28,6 +28,8 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol, o
   const [useRange, setUseRange] = useState<boolean>(false)
   const [stoploss, setStoploss] = useState<string>("")
   const [targets, setTargets] = useState<string[]>([""])
+  const [recipients, setRecipients] = useState<Recipient[]>([])
+  const [sending, setSending] = useState<boolean>(false)
 
   function updateTarget(idx: number, val: string) {
     setTargets((t) => t.map((v, i) => (i === idx ? val : v)))
@@ -37,27 +39,41 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol, o
     setTargets((t) => [...t, ""])
   }
 
-  function onSend() {
-    // demo only
-    console.log("send draft")
-    onOpenChange(false)
+  async function onSend() {
+    const cleanedTargets = targets.map(t => t.trim()).filter(Boolean)
+    if (!scrip || !entryMin || !stoploss || cleanedTargets.length === 0) {
+      console.warn("Please fill all required fields: scrip, entry, stoploss, at least one target")
+      return
+    }
+    if (order === "HOLD") {
+      console.warn("Please select BUY or SELL")
+      return
+    }
+
+    setSending(true)
+    try {
+      const payload: any = {
+        stock_name: scrip,
+        entry: entryMin,
+        entry_display: useRange && entryMax ? `${entryMin}-${entryMax}` : entryMin,
+        stoploss,
+        targets: cleanedTargets,
+        segment,
+        timehorizon: horizon === "LONGTERM" ? "POSITIONAL" : horizon,
+        order: order,
+        status: "ACTIVE",
+        is_active: true,
+        "cohort": "6f92d754-8eb7-422d-ae84-3ac3091bd863"
+      }
+      await createTradeAPI(payload as any)
+      onOpenChange(false)
+    } catch (e) {
+      console.error("Failed to create trade", e)
+    } finally {
+      setSending(false)
+    }
   }
 
-  function handoffToRecipients() {
-    const draft: PreviewDraft = {
-      side: order,
-      scrip,
-      segment,
-      horizon,
-      entryMin,
-      entryMax: useRange ? entryMax : undefined,
-      stoploss,
-      targets,
-      rr: "2/3",
-    }
-    onOpenChange(false)
-    onRecipientsClick?.(draft)
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -166,20 +182,19 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol, o
         {/* Footer */}
         <div className="border-t border-[#e4e7ec] bg-[#0b1220] bg-opacity-[0.04] px-4 py-4">
           <div className="mx-2 flex items-center gap-3 rounded-lg border border-[#e4e7ec] bg-white px-2 py-2">
-            <button
-              type="button"
-              onClick={handoffToRecipients}
-              className="flex flex-1 items-center gap-2 rounded-md px-2 text-left"
-            >
-              <UsersRound className="ml-1 h-4 w-4 text-[#98a2b3]" />
-              <span className="text-sm text-[#98a2b3]">Select recipients</span>
-            </button>
+            <RecipientsSelect
+              selected={recipients}
+              onChange={setRecipients}
+              className="flex-1"
+              placeholder="Select recipients"
+            />
             <Button
               type="button"
               onClick={onSend}
-              className="h-10 gap-2 rounded-md bg-[#7f56d9] text-white hover:bg-[#6941c6]"
+              disabled={sending}
+              className="h-10 gap-2 rounded-md bg-[#7f56d9] text-white hover:bg-[#6941c6] disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <span>Send</span>
+              <span>{sending ? "Sending..." : "Send"}</span>
               <Send className="h-4 w-4" />
             </Button>
           </div>

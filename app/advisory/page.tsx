@@ -148,7 +148,6 @@ export default function Page() {
             open={createOpen}
             onOpenChange={setCreateOpen}
             initialSymbol={initialSymbol}
-            onRecipientsClick={handoffToPreview}
           />
 
           {/* Edit Dialog */}
