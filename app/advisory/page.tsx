@@ -10,10 +10,10 @@ import { ChevronDown, RefreshCcw, Search, Send } from "lucide-react"
 import PreviewPanel, { type PreviewDraft } from "@/components/preview-panel"
 import {startServerAPI} from "@/services";
 import { getTradesAPI } from "@/services/trades"
-import type { TradeAPI } from "@/constants/types"
+import type { TradeType } from "@/constants/types"
 
 export default function Page() {
-  const [trades, setTrades] = useState<TradeAPI[]>([])
+  const [trades, setTrades] = useState<TradeType[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,7 +56,7 @@ export default function Page() {
     setPreviewOpen(true)
   }
 
-  function openEdit(t: TradeAPI) {
+  function openEdit(t: TradeType) {
     const editable: EditableTrade = {
       id: t.id,
       side: t.order,

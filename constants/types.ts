@@ -6,7 +6,7 @@ export type TradeTimeHorizon = "INTRADAY" | "SWING" | "POSITIONAL"
 export type TradeStatus = "ACTIVE" | "EXITED" | "COMPLETED" | "CANCELLED" | "INACTIVE"
 
 // Trade object as returned by the backend API
-export type TradeAPI = {
+export type TradeType = {
   id: string
   stock_name: string
   entry: string

@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { ChevronDown, ChevronUp, Clock3, Edit3, EllipsisVertical, Flag, Share2 } from "lucide-react"
-import type { TradeAPI } from "@/constants/types"
+import type { TradeType } from "@/constants/types"
 
-type Props = { trade: TradeAPI; onOpen?: () => void; onEdit?: (trade: TradeAPI) => void }
+type Props = { trade: TradeType; onOpen?: () => void; onEdit?: (trade: TradeType) => void }
 
 export default function TradeItem({ trade, onOpen, onEdit }: Props) {
   const [open, setOpen] = useState<boolean>(false)

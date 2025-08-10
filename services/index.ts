@@ -24,6 +24,9 @@ export const sendUpdateCreateRequest = async (
     }
 }
 
+
+
+
 export const sendGetRequest = async (url: string, object = "resource") => {
     const response = await apiClient.get(url)
     if (response.status >= 400) {
@@ -45,3 +48,20 @@ export const startServerAPI = async () => {
         console.warn(`Error occurred while getting image generation status`, error);
     }
 };
+
+
+export const getRequestOptions = async (
+    requestData: any,
+    method = "POST",
+    headers = {}
+) => {
+    return {
+        method: method,
+        headers: {
+            "Content-Type": "application/json",
+            ...headers,
+        },
+        data: requestData,
+        redirect: "Follow",
+    }
+}
