@@ -9,11 +9,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import {startServerAPI} from "@/services";
 
 export default function LoginPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        startServerAPI().then(() => {
+            console.log("Server is running")
+        }).catch((error) => {
+            console.error("Error starting server:", error);
+        });
+    }, [])
 
   // If already logged in, redirect to dashboard
   useEffect(() => {
@@ -22,6 +31,7 @@ export default function LoginPage() {
       if (token) router.replace("/dashboard")
     }
   }, [router])
+
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
