@@ -32,6 +32,8 @@ const ApiClient = () => {
 
 const getAuthToken = (): string | null => {
   if (typeof window !== 'undefined') {
+
+      console.log("Fetching access token from localStorage", localStorage.getItem('accessToken'))
     return localStorage.getItem('accessToken');
   }
   return null;

@@ -5,49 +5,17 @@ import Sidebar from "@/components/sidebar"
 import TradeItem from "@/components/trade-item"
 import CreateTradeDialog from "@/components/create-trade-dialog"
 import EditTradeDialog, { type EditableTrade } from "@/components/edit-trade-dialog"
-import type { Trade } from "@/components/trade-item"
 import {useEffect, useState} from "react"
 import { ChevronDown, RefreshCcw, Search, Send } from "lucide-react"
 import PreviewPanel, { type PreviewDraft } from "@/components/preview-panel"
 import {startServerAPI} from "@/services";
+import { getTradesAPI } from "@/services/trades"
+import type { TradeAPI } from "@/constants/types"
 
 export default function Page() {
-  const trades = [
-    {
-      id: "t1",
-      side: "BUY" as const,
-      symbol: "TATACHEM 25JAN FUT",
-      segment: "F&O" as const,
-      intraday: true,
-      equity: false,
-      expanded: false,
-      time: "24 Oct 2024 11:15:58 AM",
-    },
-    {
-      id: "t2",
-      side: "BUY" as const,
-      symbol: "TATACHEM 25JAN FUT",
-      segment: "F&O" as const,
-      intraday: true,
-      equity: false,
-      expanded: true,
-      time: "24 Oct 2024 11:15:58 AM",
-      entryRange: "80124 - 80312",
-      stoploss: "80000",
-      targets: "82000 » 103000",
-      riskReward: "2/3",
-    },
-    {
-      id: "t3",
-      side: "BUY" as const,
-      symbol: "TATACHEM 25JAN FUT",
-      segment: "EQUITY" as const,
-      intraday: true,
-      equity: true,
-      expanded: false,
-      time: "24 Oct 2024 11:15:58 AM",
-    },
-  ]
+  const [trades, setTrades] = useState<TradeAPI[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [initialSymbol, setInitialSymbol] = useState<string | undefined>(undefined)
@@ -56,13 +24,27 @@ export default function Page() {
   const [editOpen, setEditOpen] = useState(false)
   const [editTrade, setEditTrade] = useState<EditableTrade | null>(null)
 
-    useEffect(() => {
-        startServerAPI().then(() => {
-            console.log("Server is running")
-        }).catch((error) => {
-            console.error("Error starting server:", error);
-        });
-    }, [])
+  useEffect(() => {
+    let mounted = true
+    const run = async () => {
+      try {
+        await startServerAPI()
+        const data = await getTradesAPI()
+        if (!mounted) return
+        setTrades(Array.isArray(data) ? data : [])
+      } catch (e: any) {
+        if (!mounted) return
+        console.error("Error fetching trades:", e)
+        setError(e?.message || "Failed to load trades")
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    run()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   function openCreate(symbol?: string) {
     setInitialSymbol(symbol)
@@ -74,17 +56,17 @@ export default function Page() {
     setPreviewOpen(true)
   }
 
-  function openEdit(t: Trade) {
+  function openEdit(t: TradeAPI) {
     const editable: EditableTrade = {
       id: t.id,
-      side: t.side,
-      scrip: t.symbol,
-      horizon: "INTRADAY",
+      side: t.order,
+      scrip: t.stock_name,
+      horizon: (t.timehorizon || "INTRADAY").toUpperCase() as any,
       entryMin: "80150",
       entryMax: "80312",
       useRange: true,
       stoploss: t.stoploss ?? "80000",
-      targets: t.targets ? t.targets.split("»").map((s) => s.trim()) : ["82000", "103000"],
+      targets: Array.isArray(t.targets) ? t.targets : ["82000", "103000"],
     }
     setEditTrade(editable)
     setEditOpen(true)
@@ -141,11 +123,20 @@ export default function Page() {
           {/* List */}
           <section className="px-6 py-4">
             <div className="flex flex-col gap-3">
-              {trades.map((t) => (
+              {loading && (
+                <div className="text-sm text-[#667085]">Loading trades…</div>
+              )}
+              {!loading && error && (
+                <div className="text-sm text-red-600">{error}</div>
+              )}
+              {!loading && !error && trades.length === 0 && (
+                <div className="text-sm text-[#667085]">No trades available.</div>
+              )}
+              {!loading && !error && trades.length > 0 && trades.map((t) => (
                 <TradeItem
                   key={t.id}
                   trade={t}
-                  onOpen={() => openCreate(t.symbol.split(" ")[0])}
+                  onOpen={() => openCreate(t.stock_name.split(" ")[0])}
                   onEdit={() => openEdit(t)}
                 />
               ))}

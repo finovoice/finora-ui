@@ -28,7 +28,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("accessToken")
-      if (token) router.replace("/dashboard")
+      if (token) router.replace("/")
     }
   }, [router])
 
@@ -55,7 +55,7 @@ export default function LoginPage() {
         // Persist token
         localStorage.setItem("accessToken", res.token as string)
         // Navigate to the dashboard
-        router.replace("/dashboard")
+        router.replace("/")
       } else {
         setError("Invalid credentials. Please try again.")
       }

@@ -25,15 +25,12 @@ export const sendUpdateCreateRequest = async (
 }
 
 export const sendGetRequest = async (url: string, object = "resource") => {
-    let status = 200
     const response = await apiClient.get(url)
     if (response.status >= 400) {
         console.error(`Failed to update the `, {response})
-        status = response.status
         throw new Error(`Failed to update the ${object}`)
     }
     return response.data
-
 }
 
 export const startServerAPI = async () => {
