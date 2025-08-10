@@ -28,3 +28,18 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+
+## Local Development
+To run this project locally, follow these steps:
+
+1. After cloning the repository, run `yarn` to install dependencies.
+2. Start the development server with `yarn run dev`.
+3. Open your browser and navigate to `http://localhost:3000` to view the app.
+
+### .env
+Create a `.env` file in the root directory of your project and add the following environment variables:
+
+```plaintext
+NEXT_PUBLIC_BACKEND_URL="https://finora-backend-2zxw.onrender.com"
+```
