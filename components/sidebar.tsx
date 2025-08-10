@@ -18,7 +18,7 @@ export default function Sidebar() {
   const router = useRouter();
 
   const nav: Item[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/" },
     { id: "trades", label: "Trades", icon: Waypoints, href: "/advisory" },
     { id: "clients", label: "Clients", icon: Users, href: "/clients" },
     { id: "sales", label: "Sales", icon: ShoppingBag, href: "/sales" },
