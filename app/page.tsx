@@ -6,9 +6,10 @@ import TradeItem from "@/components/trade-item"
 import CreateTradeDialog from "@/components/create-trade-dialog"
 import EditTradeDialog, { type EditableTrade } from "@/components/edit-trade-dialog"
 import type { Trade } from "@/components/trade-item"
-import { useState } from "react"
+import {useEffect, useState} from "react"
 import { ChevronDown, RefreshCcw, Search, Send } from "lucide-react"
 import PreviewPanel, { type PreviewDraft } from "@/components/preview-panel"
+import {startServerAPI} from "@/services";
 
 export default function Page() {
   const trades = [
@@ -54,6 +55,14 @@ export default function Page() {
   const [previewDraft, setPreviewDraft] = useState<PreviewDraft | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [editTrade, setEditTrade] = useState<EditableTrade | null>(null)
+
+    useEffect(() => {
+        startServerAPI().then(() => {
+            console.log("Server is running")
+        }).catch((error) => {
+            console.error("Error starting server:", error);
+        });
+    }, [])
 
   function openCreate(symbol?: string) {
     setInitialSymbol(symbol)
