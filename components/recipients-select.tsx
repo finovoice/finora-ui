@@ -10,42 +10,25 @@ import { cn } from "@/lib/utils"
 export type Recipient = { id: string; label: string; group: "plan" | "risk" }
 
 const PLAN_OPTIONS: Recipient[] = [
-  { id: "plan_xyz", label: "Plan-name_XYZ", group: "plan" },
-  { id: "plan_abc", label: "Plan-name_ABC", group: "plan" },
-  { id: "plan_def", label: "Plan-name_DEF", group: "plan" },
-  { id: "plan_ghi", label: "Plan-name_GHI", group: "plan" },
+  { id: "STANDARD", label: "STANDARD-name_XYZ", group: "plan" },
+  { id: "PREMIUM", label: "PREMIUM-name_ABC", group: "plan" },
+  { id: "ELITE", label: "ELITE-name_DEF", group: "plan" },
 ]
 
 const RISK_OPTIONS: Recipient[] = [
-  { id: "risk_conservative", label: "Conservative", group: "risk" },
-  { id: "risk_moderate", label: "Moderate", group: "risk" },
-  { id: "risk_aggressive", label: "Aggressive", group: "risk" },
+  { id: "CONSERVATIVE", label: "CONSERVATIVE", group: "risk" },
+  { id: "AGGRESSIVE", label: "AGGRESSIVE", group: "risk" },
+  { id: "HIGH", label: "HIGH", group: "risk" },
 ]
 
 export function RecipientsSelect({
   selected,
   onChange,
-  onPost,
-  className,
-  open,
-  onOpenChange,
-  placeholder = "Select recipients",
 }: {
   selected: Recipient[]
   onChange: (next: Recipient[]) => void
-  onPost?: () => void
-  className?: string
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  placeholder?: string
 }) {
-  const [internalOpen, setInternalOpen] = React.useState(false)
-  const isControlled = typeof open === "boolean"
-  const isOpen = isControlled ? open : internalOpen
-  const setOpen = (v: boolean) => {
-    if (isControlled && onOpenChange) onOpenChange(v)
-    else setInternalOpen(v)
-  }
+  const [activeTab, setActiveTab] = React.useState("plans")
 
   const toggle = (opt: Recipient) => {
     if (selected.find((r) => r.id === opt.id)) {
@@ -55,85 +38,46 @@ export function RecipientsSelect({
     }
   }
 
-  const remove = (id: string) => onChange(selected.filter((r) => r.id !== id))
-
   const countByGroup = (group: Recipient["group"]) =>
     selected.filter((r) => r.group === group).length
 
   return (
-    <Popover open={isOpen} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "flex min-h-12 w-full items-center gap-2 rounded-md border border-[#e4e7ec] bg-white px-3 text-left",
-            className,
-          )}
-        >
-          <div className="flex flex-wrap items-center gap-2 flex-1">
-            {selected.length === 0 ? (
-              <span className="text-[#98a2b3]">{placeholder}</span>
-            ) : (
-              selected.map((r) => (
-                <Chip key={r.id} label={r.label} onRemove={() => remove(r.id)} />
-              ))
-            )}
-          </div>
-          <ChevronsUpDown className="h-4 w-4 text-[#98a2b3]" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <div className="border-b border-[#e4e7ec] px-4 py-2">
-          <Tabs defaultValue="plans">
-            <div className="flex items-center justify-between">
-              <TabsList className="h-9 bg-transparent p-0">
-                <TabsTrigger className="px-3 data-[state=active]:text-[#7f56d9]" value="plans">
-                  Plans <Badge count={countByGroup("plan")} />
-                </TabsTrigger>
-                <TabsTrigger className="px-3 data-[state=active]:text-[#7f56d9]" value="risk">
-                  Risk profile <Badge count={countByGroup("risk")} />
-                </TabsTrigger>
-              </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full border-1">
+            <div className="border-b border-[#e4e7ec] px-4 py-2">
+                <div className="flex items-center justify-between">
+                    <TabsList className="h-auto bg-transparent p-0">
+                        <TabsTrigger
+                            className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#7f56d9] data-[state=active]:text-[#7f56d9] data-[state=active]:border-b-2 data-[state=active]:border-[#7f56d9] rounded-none bg-transparent data-[state=active]:bg-transparent shadow-none data-[state=active]:shadow-none"
+                            value="plans"
+                            onClick={() => setActiveTab("plans")}
+                        >
+                            Plans <Badge count={countByGroup("plan")} />
+                        </TabsTrigger>
+                        <TabsTrigger
+                            className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#7f56d9] data-[state=active]:text-[#7f56d9] data-[state=active]:border-b-2 data-[state=active]:border-[#7f56d9] rounded-none bg-transparent data-[state=active]:bg-transparent shadow-none data-[state=active]:shadow-none"
+                            value="risk"
+                            onClick={() => setActiveTab("risk")}
+                        >
+                            Risk profile <Badge count={countByGroup("risk")} />
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
             </div>
-
             <TabsContent value="plans" className="m-0">
-              <OptionList
-                options={PLAN_OPTIONS}
-                selected={selected}
-                onToggle={toggle}
-              />
+                <OptionList
+                    options={PLAN_OPTIONS}
+                    selected={selected}
+                    onToggle={toggle}
+                />
             </TabsContent>
             <TabsContent value="risk" className="m-0">
-              <OptionList
-                options={RISK_OPTIONS}
-                selected={selected}
-                onToggle={toggle}
-              />
+                <OptionList
+                    options={RISK_OPTIONS}
+                    selected={selected}
+                    onToggle={toggle}
+                />
             </TabsContent>
-          </Tabs>
-        </div>
-        <div className="flex items-center justify-end gap-2 px-3 py-2">
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="text-sm text-[#667085] hover:text-[#475467]"
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              onPost?.()
-            }}
-            className="inline-flex items-center gap-2 rounded-md bg-[#7f56d9] px-3 py-2 text-sm text-white hover:bg-[#6941c6]"
-          >
-            Post
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
-      </PopoverContent>
-    </Popover>
+        </Tabs>
   )
 }
 
@@ -161,22 +105,6 @@ function OptionList({
         )
       })}
     </div>
-  )
-}
-
-function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-md border border-[#e4e7ec] bg-[#f9fafb] px-2 py-1 text-xs text-[#344054]">
-      {label}
-      <button
-        type="button"
-        aria-label={`Remove ${label}`}
-        className="rounded p-0.5 hover:bg-[#e4e7ec]"
-        onClick={onRemove}
-      >
-        <X className="h-3 w-3 text-[#98a2b3]" />
-      </button>
-    </span>
   )
 }
 

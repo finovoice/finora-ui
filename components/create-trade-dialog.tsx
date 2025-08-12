@@ -40,6 +40,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
   }
 
   async function onSend() {
+    console.log("onSend", {recipients})
     const cleanedTargets = targets.map(t => t.trim()).filter(Boolean)
     if (!scrip || !entryMin || !stoploss || cleanedTargets.length === 0) {
       console.warn("Please fill all required fields: scrip, entry, stoploss, at least one target")
@@ -180,13 +181,11 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
         </div>
 
         {/* Footer */}
-        <div className="border-t border-[#e4e7ec] bg-[#0b1220] bg-opacity-[0.04] px-4 py-4">
+        <div className="backgroud-transparent border-t border-[#e4e7ec] px-6 py-4">
           <div className="mx-2 flex items-center gap-3 rounded-lg border border-[#e4e7ec] bg-white px-2 py-2">
             <RecipientsSelect
               selected={recipients}
               onChange={setRecipients}
-              className="flex-1"
-              placeholder="Select recipients"
             />
             <Button
               type="button"
