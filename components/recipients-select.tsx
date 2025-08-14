@@ -1,16 +1,9 @@
-// 
-
-
-
 "use client"
 
 import * as React from "react"
 import { useRef, useState } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
-import { X, ChevronsUpDown, Send } from 'lucide-react'
-import { cn } from "@/lib/utils"
 import { useClickOutside } from "@/lib/hooks/useClickOutside";
 
 export type Recipient = { id: string; label: string; group: "plan" | "risk" }
