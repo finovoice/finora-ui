@@ -44,3 +44,13 @@ export type UITrade = {
   targets?: string
   riskReward?: string
 }
+
+// Cohort object as returned by the backend API
+export type CohortType = {
+  id: string
+  name: string
+  description: string
+  client_count: number
+  created_at: string
+  is_active: boolean
+}

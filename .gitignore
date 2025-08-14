@@ -1,3 +1,4 @@
 /node_modules
 /.next
 .env
+.yarn/install-state.gz

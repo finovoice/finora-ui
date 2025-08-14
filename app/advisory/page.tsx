@@ -5,10 +5,10 @@ import Sidebar from "@/components/sidebar"
 import TradeItem from "@/components/trade-item"
 import CreateTradeDialog from "@/components/create-trade-dialog"
 import EditTradeDialog, { type EditableTrade } from "@/components/edit-trade-dialog"
-import {useEffect, useState} from "react"
+import { useEffect, useState } from "react"
 import { ChevronDown, RefreshCcw, Search, Send } from "lucide-react"
 import PreviewPanel, { type PreviewDraft } from "@/components/preview-panel"
-import {startServerAPI} from "@/services";
+import { startServerAPI } from "@/services";
 import { getTradesAPI } from "@/services/trades"
 import type { TradeType } from "@/constants/types"
 

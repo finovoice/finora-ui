@@ -11,6 +11,7 @@ import { Flag, Clock3, Ban, Bike, Layers3, Send } from 'lucide-react'
 import ScripCombobox from "./scrip-combobox"
 import { RecipientsSelect, type Recipient } from "./recipients-select"
 import { createTradeAPI } from "@/services/trades"
+import { createCohortAPI } from "@/services/trades"
 
 type Props = {
   open: boolean
@@ -30,6 +31,8 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
   const [targets, setTargets] = useState<string[]>([""])
   const [recipients, setRecipients] = useState<Recipient[]>([])
   const [sending, setSending] = useState<boolean>(false)
+  const [toggleRecipientsMenu, setToggleRecipientsMenu] = useState(false)
+
 
   function updateTarget(idx: number, val: string) {
     setTargets((t) => t.map((v, i) => (i === idx ? val : v)))
@@ -40,7 +43,6 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
   }
 
   async function onSend() {
-    console.log("onSend", {recipients})
     const cleanedTargets = targets.map(t => t.trim()).filter(Boolean)
     if (!scrip || !entryMin || !stoploss || cleanedTargets.length === 0) {
       console.warn("Please fill all required fields: scrip, entry, stoploss, at least one target")
@@ -51,9 +53,34 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
       return
     }
 
+    const plans: string[] = [];
+    const risk: string[] = [];
+
+    // Iterate through the data array and populate the new arrays
+    recipients.forEach(item => {
+      if (item.group === 'plan') {
+        plans.push(item.id);
+      } else if (item.group === 'risk') {
+        risk.push(item.id);
+      }
+    });
+
     setSending(true)
+
+    let createdCohort;
+
     try {
-      const payload: any = {
+      const cohortPayload: any = {
+        name: "New Cohort name 2",
+        description: "Cohort description",
+        is_active: true,
+        client_phone_numbers: [],
+        risk_profiles: risk,
+        plans: plans
+      }
+      createdCohort = await createCohortAPI(cohortPayload as any)
+
+      const tradePayload: any = {
         stock_name: scrip,
         entry: entryMin,
         entry_display: useRange && entryMax ? `${entryMin}-${entryMax}` : entryMin,
@@ -64,31 +91,29 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
         order: order,
         status: "ACTIVE",
         is_active: true,
-        "cohort": "6f92d754-8eb7-422d-ae84-3ac3091bd863"
+        cohort: createdCohort?.id
       }
-      await createTradeAPI(payload as any)
+      const response = await createTradeAPI(tradePayload as any)
       onOpenChange(false)
     } catch (e) {
-      console.error("Failed to create trade", e)
+      console.error("An error occurred during API calls: ", e)
     } finally {
       setSending(false)
     }
   }
-
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden">
-        <DialogHeader className="border-b border-[#e4e7ec] px-6 py-4">
-          <DialogTitle className="text-xl text-[#101828]">Create trade</DialogTitle>
+      <DialogContent className="p-0 bg-white border">
+        <DialogHeader className="border-b border-[#e4e7ec] px-6 py-3">
+          <DialogTitle className="text-sm text-[#101828]">Create trade</DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 py-5 space-y-6">
+        <div className="px-6 pt-4 space-y-3">
           {/* Order */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr] items-start">
             <FieldLabel icon={<Bike className="h-4 w-4" />} text="Order" />
             <RadioGroup
-              className="flex gap-6"
+              className="flex gap-6 text-sm"
               value={order}
               onValueChange={(v: "BUY" | "SELL" | "HOLD") => setOrder(v)}
             >
@@ -122,7 +147,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr] items-start">
             <FieldLabel icon={<Clock3 className="h-4 w-4 rotate-180" />} text="Entry" />
             <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-row sm:grid-cols-2 gap-3">
                 <CurrencyInput
                   placeholder="Min"
                   value={entryMin}
@@ -134,6 +159,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
                   onChange={(e) => setEntryMax(e.target.value)}
                   disabled={!useRange}
                 />
+
               </div>
               <div className="flex items-center gap-2 self-end">
                 <Switch id="range" checked={useRange} onCheckedChange={setUseRange} />
@@ -190,7 +216,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
             <Button
               type="button"
               onClick={onSend}
-              disabled={sending}
+              disabled={sending || !recipients.length}
               className="h-10 gap-2 rounded-md bg-[#7f56d9] text-white hover:bg-[#6941c6] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <span>{sending ? "Sending..." : "Send"}</span>
@@ -205,7 +231,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
 
 function FieldLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-2 text-[#344054] font-medium">
+    <div className="flex items-center gap-2 text-[#344054] text-sm">
       <span className="text-[#667085]">{icon}</span>
       <span>{text}</span>
     </div>
@@ -216,7 +242,7 @@ function RadioItem({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <RadioGroupItem id={value} value={value} />
-      <Label htmlFor={value} className="text-sm text-[#475467]">
+      <Label htmlFor={value} className="text-xs text-[#475467]">
         {label}
       </Label>
     </div>
@@ -235,7 +261,7 @@ function CurrencyInput(
       <Input
         {...rest}
         disabled={disabled}
-        className={`h-10 pl-8 rounded-md border-[#e4e7ec] placeholder:text-[#98a2b3] focus-visible:ring-0 focus-visible:ring-offset-0 ${className ?? ""}`}
+        className={`h-8 pl-8 w-[10vw] rounded-md border-[#e4e7ec] placeholder:text-[#98a2b3] focus-visible:ring-0 focus-visible:ring-offset-0 ${className ?? ""}`}
       />
     </div>
   )

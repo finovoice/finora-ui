@@ -26,7 +26,7 @@ export default function ScripCombobox({
         <button
           type="button"
           className={cn(
-            "flex w-full items-center justify-between rounded-md border border-[#e4e7ec] bg-white px-3 py-2 text-left text-sm",
+            "flex w-full items-center justify-between rounded-md border border-[#e4e7ec] bg-white px-3 py-1.5 text-left text-sm",
             "hover:bg-[#f9fafb]",
           )}
         >
@@ -49,6 +49,7 @@ export default function ScripCombobox({
                   key={s.ticker}
                   value={`${s.name} ${s.ticker}`}
                   onSelect={() => {
+
                     onChange(s.ticker)
                     setOpen(false)
                   }}
