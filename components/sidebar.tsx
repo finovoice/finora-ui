@@ -58,11 +58,10 @@ export default function Sidebar() {
       <div className="mt-auto px-2 pb-4 pt-6">
         <ul className="space-y-1">
           <li>
-            <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]">
-              {/* Settings and Logout remain decorative here */}
+            <Link href="/settings" className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]">
               <Settings className="h-4 w-4" />
               <span>Settings</span>
-            </button>
+            </Link>
           </li>
           <li>
             <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]" onClick={() => {
