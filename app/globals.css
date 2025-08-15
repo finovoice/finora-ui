@@ -1,6 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -113,10 +118,58 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Custom scrollbar styling for WebKit browsers */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  /* Make it thinner */
+  height: 8px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  /* Lighter background color */
+  border-radius: 10px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #c0c0c0;
+  /* A lighter gray for the thumb */
+  border-radius: 10px;
+  border: 2px solid #f0f0f0;
+  /* Creates a small border effect */
+}
+
+/* Optional: style on hover */
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #a0a0a0;
+}
+
+/* For Firefox */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  /* Makes it thinner */
+  scrollbar-color: #c0c0c0 #f0f0f0;
+  /* Thumb color, then track color */
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

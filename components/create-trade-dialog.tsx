@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
-import { Flag, Clock3, Ban, Bike, Layers3, Send } from 'lucide-react'
+import { Flag, Clock3, Ban, Bike, Layers3, Send, X } from 'lucide-react'
 import ScripCombobox from "./scrip-combobox"
 import { RecipientsSelect, type Recipient } from "./recipients-select"
 import { createTradeAPI } from "@/services/trades"
@@ -29,6 +29,10 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
   const [useRange, setUseRange] = useState<boolean>(false)
   const [stoploss, setStoploss] = useState<string>("")
   const [targets, setTargets] = useState<string[]>([""])
+  const [blankScripWarning, setBlankScripWarning] = useState<boolean>(false)
+  const [blankEntryWarning, setBlankEntryWarning] = useState<boolean>(false)
+  const [blankStoplossWarning, setBlankStoplossWarning] = useState<boolean>(false)
+  const [blankTargetWarning, setBlankTargetWarning] = useState<boolean>(false)
   const [recipients, setRecipients] = useState<Recipient[]>([])
   const [sending, setSending] = useState<boolean>(false)
   const [toggleRecipientsMenu, setToggleRecipientsMenu] = useState(false)
@@ -42,8 +46,19 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
     setTargets((t) => [...t, ""])
   }
 
+  function removeTarget(index: number) {
+    setTargets((t) => t.filter((_, i) => i !== index))
+  }
+
+
   async function onSend() {
     const cleanedTargets = targets.map(t => t.trim()).filter(Boolean)
+
+    setBlankScripWarning(!scrip);
+    setBlankEntryWarning(!entryMin);
+    setBlankStoplossWarning(!stoploss);
+    setBlankTargetWarning(cleanedTargets.length === 0);
+
     if (!scrip || !entryMin || !stoploss || cleanedTargets.length === 0) {
       console.warn("Please fill all required fields: scrip, entry, stoploss, at least one target")
       return
@@ -103,7 +118,8 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 bg-white border">
+      <DialogContent className="p-0 bg-white border"
+      >
         <DialogHeader className="border-b border-[#e4e7ec] px-6 py-3">
           <DialogTitle className="text-sm text-[#101828]">Create trade</DialogTitle>
         </DialogHeader>
@@ -126,7 +142,11 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
           {/* Scrip */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr] items-start">
             <FieldLabel icon={<Layers3 className="h-4 w-4" />} text="Scrip" />
-            <ScripCombobox value={scrip} onChange={setScrip} placeholder="Search" />
+            <ScripCombobox
+              value={scrip}
+              onChange={setScrip}
+              blankInputWarning={blankScripWarning}
+              placeholder="Search" />
           </div>
 
           {/* Horizon */}
@@ -151,6 +171,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
                 <CurrencyInput
                   placeholder="Min"
                   value={entryMin}
+                  blankInputWarning={blankEntryWarning}
                   onChange={(e) => setEntryMin(e.target.value)}
                 />
                 <CurrencyInput
@@ -173,11 +194,16 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
           {/* Stoploss */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr] items-start">
             <FieldLabel icon={<Ban className="h-4 w-4" />} text="Stoploss" />
-            <CurrencyInput
-              placeholder=""
-              value={stoploss}
-              onChange={(e) => setStoploss(e.target.value)}
-            />
+            <span className="flex flex-col">
+              <CurrencyInput
+                placeholder=""
+                blankInputWarning={blankStoplossWarning}
+                value={stoploss}
+                onChange={(e) => setStoploss(e.target.value)}
+              />
+              {/* <span className="text-red-800 text-xs">* Required</span> */}
+            </span>
+
           </div>
 
           {/* Targets */}
@@ -185,12 +211,23 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
             <FieldLabel icon={<Flag className="h-4 w-4" />} text="Target(s)" />
             <div className="space-y-2">
               {targets.map((t, i) => (
-                <CurrencyInput
-                  key={i}
-                  placeholder=""
-                  value={t}
-                  onChange={(e) => updateTarget(i, e.target.value)}
-                />
+                <span key={i} className="flex flex-row">
+                  <CurrencyInput
+                    blankInputWarning={blankTargetWarning}
+                    key={i}
+                    placeholder=""
+                    value={t}
+                    onChange={(e) => updateTarget(i, e.target.value)}
+                  />
+                  {targets.length > 1 ?
+                    <button
+                      className="flex items-center justify-center ml-2 text-gray-500 hover:text-gray-700"
+                      onClick={() => removeTarget(i)}
+                    >
+                      <X className="font-semibold" size={15} />
+                    </button> : ''
+                  }
+                </span>
               ))}
               <button
                 className="text-sm text-[#667085] hover:text-[#475467] inline-flex items-center gap-2"
@@ -208,7 +245,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
 
         {/* Footer */}
         <div className="backgroud-transparent border-t border-[#e4e7ec] px-6 py-4">
-          <div className="mx-2 flex items-center gap-3 rounded-lg border border-[#e4e7ec] bg-white px-2 py-2">
+          <div className="mx-2 flex items-center gap-3  bg-white px-2 py-2">
             <RecipientsSelect
               selected={recipients}
               onChange={setRecipients}
@@ -250,18 +287,19 @@ function RadioItem({ value, label }: { value: string; label: string }) {
 }
 
 function CurrencyInput(
-  props: React.ComponentProps<typeof Input> & { disabled?: boolean },
+  props: React.ComponentProps<typeof Input> & { disabled?: boolean; blankInputWarning?: boolean },
 ) {
-  const { className, disabled, ...rest } = props
+  const { className, disabled, blankInputWarning, ...rest } = props
   return (
     <div className="relative">
       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]">
         {'₹'}
       </span>
       <Input
+        type="number"
         {...rest}
         disabled={disabled}
-        className={`h-8 pl-8 w-[10vw] rounded-md border-[#e4e7ec] placeholder:text-[#98a2b3] focus-visible:ring-0 focus-visible:ring-offset-0 ${className ?? ""}`}
+        className={`h-8 pl-8 w-[10vw] rounded-md placeholder:text-[#98a2b3] focus-visible:ring-0 focus-visible:ring-offset-0 ${blankInputWarning ? 'border-red-500' : 'border-[#e4e7ec]'} ${className ?? ""}`}
       />
     </div>
   )

@@ -51,17 +51,17 @@ export function RecipientsSelect({
       className="relative w-full max-w-xs"
       ref={recipientSelectRef}
     >
-      <div className="flex flex-nowrap overflow-x-auto items-center gap-1 border rounded px-2 py-1 focus-within:ring-1 focus-within:ring-blue-500 thin-scrollbar">
+      <div className="flex flex-nowrap overflow-x-auto no-scrollbar items-center gap-1 border rounded px-2 py-1 focus-within:ring-1 focus-within:ring-blue-500">
         {selected.map((item) => (
           <span
             key={item.id}
-            className="shrink-0 border-1 text-gray-600 px-2 py-0.5 rounded-sm text-sm flex items-center gap-1"
+            className="shrink-0 border-1 text-gray-600 px-2 my-0.5 rounded-sm text-sm flex items-center gap-1"
           >
             {item.label}
             <button
               type="button"
               onClick={() => toggle(item)}
-              className="text-lg m-1 text-gray-500 hover:text-blue-700"
+              className="text-lg ml-1.5 text-gray-500 hover:text-blue-700"
             >
               ×
             </button>
@@ -82,14 +82,14 @@ export function RecipientsSelect({
             <div className="flex items-center justify-between">
               <TabsList className="h-auto bg-transparent p-0">
                 <TabsTrigger
-                  className="px-3 py-2 text-sm text-gray-600 hover:text-[#7f56d9] data-[state=active]:text-[#7f56d9] data-[state=active]:border-b-2 data-[state=active]:border-[#7f56d9] rounded-none bg-transparent data-[state=active]:bg-transparent shadow-none data-[state=active]:shadow-none"
+                  className="px-3 pt-2 pb-3 text-sm text-gray-600 hover:text-[#7f56d9] data-[state=active]:text-[#7f56d9] data-[state=active]:border-b-2 data-[state=active]:border-b-[#7f56d9] rounded-none bg-transparent data-[state=active]:bg-transparent shadow-none data-[state=active]:shadow-none"
                   value="plans"
                   onClick={() => setActiveTab("plans")}
                 >
                   Plans <Badge count={countByGroup("plan")} />
                 </TabsTrigger>
                 <TabsTrigger
-                  className="px-3 py-2 text-sm text-gray-600 hover:text-[#7f56d9] data-[state=active]:text-[#7f56d9] data-[state=active]:border-b-2 data-[state=active]:border-[#7f56d9] rounded-none bg-transparent data-[state=active]:bg-transparent shadow-none data-[state=active]:shadow-none"
+                  className="px-3 pt-2 pb-3 text-sm text-gray-600 hover:text-[#7f56d9] data-[state=active]:text-[#7f56d9] data-[state=active]:border-b-2 data-[state=active]:border-b-[#7f56d9] rounded-none bg-transparent data-[state=active]:bg-transparent shadow-none data-[state=active]:shadow-none"
                   value="risk"
                   onClick={() => setActiveTab("risk")}
                 >
