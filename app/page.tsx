@@ -93,6 +93,21 @@ export default function DashboardPage() {
             <div className="mx-auto flex max-w-[1440px] gap-0">
                 <Sidebar />
                 <main className="flex-1 p-6 md:p-8">
+                    {/* Header navigation */}
+                    <div className="mb-8 border-b border-[#e4e7ec]">
+                        <div className="flex items-center gap-8">
+                            <div className="pb-3 text-lg font-semibold text-[#101828]">
+                                Dashboard
+                            </div>
+                            <button className="pb-3 text-sm font-medium text-[#667085] hover:text-[#344054]">
+                                Actions
+                            </button>
+                            <button className="pb-3 text-sm font-medium text-[#667085] hover:text-[#344054]">
+                                Business trends
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Top bar to mirror the filter controls in the image */}
                     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
