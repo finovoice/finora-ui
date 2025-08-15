@@ -25,55 +25,58 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside
-      className="hidden md:flex w-[208px] shrink-0 flex-col border-r border-[#e4e7ec] bg-white"
-      aria-label="Sidebar"
-    >
-      <div className="px-4 py-4">
-        <Brand />
-      </div>
-      <nav className="px-2">
-        <ul className="space-y-1">
-          {nav.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"))
-            const activeClasses = isActive
-              ? "bg-[#f9f5ff] text-[#6941c6] border border-[#e9d7fe]"
-              : "text-[#344054] hover:bg-[#f2f4f7]"
-            return (
-              <li key={item.id}>
-                <Link
-                  href={item.href}
-                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm ${activeClasses}`}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </nav>
-      <div className="mt-auto px-2 pb-4 pt-6">
-        <ul className="space-y-1">
-          <li>
-            <Link href="/settings" className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-          </li>
-          <li>
-            <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]" onClick={() => {
-                signOut()
-                router.push("/login")
-            }}>
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-    </aside>
+    <>
+      <aside
+        className="hidden md:fixed md:inset-y-0 md:left-0 md:flex md:w-[208px] flex-col border-r border-[#e4e7ec] bg-white h-screen z-20"
+        aria-label="Sidebar"
+      >
+        <div className="px-4 py-4">
+          <Brand />
+        </div>
+        <nav className="px-2">
+          <ul className="space-y-1">
+            {nav.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"))
+              const activeClasses = isActive
+                ? "bg-[#f9f5ff] text-[#6941c6] border border-[#e9d7fe]"
+                : "text-[#344054] hover:bg-[#f2f4f7]"
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={item.href}
+                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm ${activeClasses}`}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+        <div className="mt-auto px-2 pb-4 pt-6">
+          <ul className="space-y-1">
+            <li>
+              <Link href="/settings" className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]">
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </Link>
+            </li>
+            <li>
+              <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]" onClick={() => {
+                  signOut()
+                  router.push("/login")
+              }}>
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </aside>
+      <div className="hidden md:block w-[208px] shrink-0" aria-hidden />
+    </>
   )
 }
