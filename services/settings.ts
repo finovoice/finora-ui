@@ -28,6 +28,7 @@ export type OrganisationUpdateRequest = Partial<{
   owner_name: string
     logo_url: string | null
     signature_url: string | null
+    address: string
 
 }>
 

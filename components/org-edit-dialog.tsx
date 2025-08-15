@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import FileUpload from "./file-upload"
 import { useState } from "react"
 import type { Organisation, OrganisationUpdateRequest } from "@/services/settings"
-import { uploadFileAPI } from "@/services/upload"
+import { uploadFileAPI, createSignedUrlAPI } from "@/services/upload"
 
 export default function OrgEditDialog({
   open,
@@ -29,6 +29,8 @@ export default function OrgEditDialog({
   }))
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingSign, setUploadingSign] = useState(false)
+  const [previewLogoUrl, setPreviewLogoUrl] = useState<string | null>(null)
+  const [previewSignUrl, setPreviewSignUrl] = useState<string | null>(null)
 
   // Keep form in sync if dialog is reopened with different initial values
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -49,6 +51,18 @@ export default function OrgEditDialog({
     }
     next.__initialKey = JSON.stringify(next)
     setForm(next)
+    setPreviewLogoUrl(null)
+    setPreviewSignUrl(null)
+  }
+
+  // Fetch signed URLs for previews when dialog opens or initial URLs change
+  if (open) {
+    if (initial.logo_url && !previewLogoUrl) {
+      createSignedUrlAPI(initial.logo_url).then((res) => setPreviewLogoUrl(res.signed_url)).catch(() => {})
+    }
+    if (initial.signature_url && !previewSignUrl) {
+      createSignedUrlAPI(initial.signature_url).then((res) => setPreviewSignUrl(res.signed_url)).catch(() => {})
+    }
   }
 
   function update<K extends keyof OrganisationUpdateRequest>(key: K, value: OrganisationUpdateRequest[K]) {
@@ -81,7 +95,7 @@ export default function OrgEditDialog({
             </div>
             <div className="space-y-1.5 md:col-span-2">
               <Label htmlFor="org-address">Registered address</Label>
-              <Input id="org-address" value={initial.address} disabled />
+              <Input id="org-address" value={initial.address} onChange={(e) => update("address", e.target.value)}/>
             </div>
           </div>
 
@@ -93,18 +107,19 @@ export default function OrgEditDialog({
               accept="image/*"
               dimensions="max. 400x400px"
               maxSize="2MB"
-              value={form.logo_url ?? null}
+              value={previewLogoUrl ?? null}
               fileName={form.logo_url ? form.logo_url.split('/').pop() || 'logo.png' : null}
               onFileSelect={async (file) => {
                 try {
                   setUploadingLogo(true)
                   const res = await uploadFileAPI(file, "org_logo")
                   update("logo_url", res.url)
+                  setPreviewLogoUrl(res.signed_url)
                 } finally {
                   setUploadingLogo(false)
                 }
               }}
-              onFileDelete={() => update("logo_url", null)}
+              onFileDelete={() => { update("logo_url", null); setPreviewLogoUrl(null) }}
               showPreview
             />
             {uploadingLogo && <div className="text-xs text-[#667085] mt-2">Uploading logo...</div>}
@@ -124,11 +139,12 @@ export default function OrgEditDialog({
                   setUploadingSign(true)
                   const res = await uploadFileAPI(file, "org_signature")
                   update("signature_url", res.url)
+                  setPreviewSignUrl(res.signed_url)
                 } finally {
                   setUploadingSign(false)
                 }
               }}
-              onFileDelete={() => update("signature_url", null)}
+              onFileDelete={() => { update("signature_url", null); setPreviewSignUrl(null) }}
               showPreview={false}
             />
             {uploadingSign && <div className="text-xs text-[#667085] mt-2">Uploading sign...</div>}
