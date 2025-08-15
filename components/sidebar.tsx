@@ -1,10 +1,12 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import {usePathname, useRouter} from "next/navigation"
 import { LayoutDashboard, Waypoints, Users, ShoppingBag, Settings, LogOut } from "lucide-react"
 import Brand from "@/components/brand"
 import {signOut} from "@/lib/axiosClient";
+import ConfirmDialog from "@/components/confirm-dialog"
 
 type Item = {
   id: string
@@ -16,6 +18,8 @@ type Item = {
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter();
+  const [logoutOpen, setLogoutOpen] = React.useState(false)
+  const [loggingOut, setLoggingOut] = React.useState(false)
 
   const nav: Item[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -65,10 +69,7 @@ export default function Sidebar() {
               </Link>
             </li>
             <li>
-              <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]" onClick={() => {
-                  signOut()
-                  router.push("/login")
-              }}>
+              <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-[#344054] hover:bg-[#f2f4f7]" onClick={() => setLogoutOpen(true)}>
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
               </button>
@@ -77,6 +78,23 @@ export default function Sidebar() {
         </div>
       </aside>
       <div className="hidden md:block w-[208px] shrink-0" aria-hidden />
+      <ConfirmDialog
+        open={logoutOpen}
+        onOpenChange={setLogoutOpen}
+        title="Log out?"
+        description="You will be signed out of your account. You can sign back in anytime."
+        confirmText={loggingOut ? "Logging out..." : "Logout"}
+        cancelText="Cancel"
+        onConfirm={async () => {
+          setLoggingOut(true)
+          try {
+            await Promise.resolve(signOut())
+          } finally {
+            setLoggingOut(false)
+            router.push("/login")
+          }
+        }}
+      />
     </>
   )
 }
