@@ -27,7 +27,7 @@ export interface SignedUrlResponse {
  * - file: binary file
  * - purpose: string (e.g., "invoice")
  */
-export const createUploadAPI = async (
+export const uploadFileAPI = async (
   file: File | Blob,
   purpose: string
 ): Promise<UploadResponse> => {

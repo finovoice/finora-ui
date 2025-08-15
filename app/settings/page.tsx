@@ -2,11 +2,11 @@
 
 import Sidebar from "@/components/sidebar"
 import { useState } from "react"
-import { Edit, Link as LinkIcon, Mail, Pencil, Phone, Plus, Trash2 } from "lucide-react"
-import OrgEditDialog, { type OrgDetails } from "@/components/org-edit-dialog"
+import { Edit, Plus, Trash2 } from "lucide-react"
 import PlanDialog, { type PlanDetails } from "@/components/plan-dialog"
 import EmployeeDialog, { type Employee } from "@/components/employee-dialog"
 import ConfirmDialog from "@/components/confirm-dialog"
+import OrganisationDetails from "@/components/organisation-details"
 
 export default function SettingsPage() {
   const [plans, setPlans] = useState<PlanDetails[]>([
@@ -25,16 +25,6 @@ export default function SettingsPage() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [confirmEmployeeId, setConfirmEmployeeId] = useState<string | null>(null)
 
-  const [orgOpen, setOrgOpen] = useState(false)
-  const initialOrg: OrgDetails = {
-    name: "XZY company pvt ltd",
-    license: "abcd123456f",
-    address: "X street, Y building, Z City, State, Country - pincode",
-    email: "xyz@company.com",
-    website: "companyname.com",
-    phone: "+91-9876543210",
-    gstin: "",
-  }
   return (
     <div className="min-h-screen bg-[#f9fafb] text-[#101828]">
       <div className="mx-auto flex">
@@ -57,78 +47,7 @@ export default function SettingsPage() {
 
           {/* About Card */}
           <section className="px-6 py-6">
-            <div className="rounded-lg border border-[#e4e7ec] bg-white">
-              <div className="flex items-center justify-between border-b border-[#e4e7ec] px-4 py-3">
-                <h2 className="text-sm font-medium text-[#344054]">About</h2>
-                <button onClick={() => setOrgOpen(true)} className="inline-flex items-center gap-2 rounded-md border border-[#e4e7ec] bg-white px-3 py-1.5 text-sm text-[#344054] hover:bg-[#f2f4f7]">
-                  <Pencil className="h-4 w-4" /> Edit
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6 px-6 py-6">
-                {/* Logo */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">Logo</div>
-                  <div className="h-12 w-12 rounded-md bg-[#f2f4f7] flex items-center justify-center">
-                    {/* placeholder logo */}
-                    <span className="text-[#667085] text-lg font-semibold">F</span>
-                  </div>
-                </div>
-
-                {/* Org name */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">Org name</div>
-                  <div className="text-sm">XZY company pvt ltd</div>
-                </div>
-
-                {/* License */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">SEBI Registered License Number</div>
-                  <div className="text-sm">abcd123456f</div>
-                </div>
-
-                {/* Registered address */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">Registered address</div>
-                  <div className="text-sm">X street, Y building, Z City, State, Country - pincode</div>
-                </div>
-
-                {/* Registered Email */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">Registered Email</div>
-                  <div className="inline-flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4 text-[#98a2b3]" /> xyz@company.com
-                  </div>
-                </div>
-
-                {/* Website */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">Website</div>
-                  <div className="inline-flex items-center gap-2 text-sm">
-                    <LinkIcon className="h-4 w-4 text-[#98a2b3]" /> companyname.com
-                  </div>
-                </div>
-
-                {/* Registered phone */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">Registered phone</div>
-                  <div className="inline-flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-[#98a2b3]" /> +91-9876543210
-                  </div>
-                </div>
-
-                {/* Sign */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">Sign</div>
-                  <div className="h-10 w-24 bg-[url('/signature.png')] bg-[length:96px_40px] bg-no-repeat" aria-label="signature" />
-                </div>
-
-                {/* GST Number */}
-                <div className="space-y-2">
-                  <div className="text-xs text-[#667085]">GST Number</div>
-                  <div className="text-sm">-</div>
-                </div>
-              </div>
-            </div>
+            <OrganisationDetails orgId={1} />
           </section>
 
           {/* Employees */}
@@ -205,8 +124,6 @@ export default function SettingsPage() {
               })}
             </div>
           </section>
-        {/* Edit Organisation Dialog */}
-          <OrgEditDialog open={orgOpen} onOpenChange={setOrgOpen} initial={initialOrg} onSave={() => setOrgOpen(false)} />
 
           {/* Add/Edit Employee Dialog */}
           <EmployeeDialog
