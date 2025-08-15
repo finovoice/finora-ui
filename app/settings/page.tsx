@@ -4,8 +4,14 @@ import Sidebar from "@/components/sidebar"
 import { useState } from "react"
 import { Edit, Link as LinkIcon, Mail, Pencil, Phone, Plus, Trash2 } from "lucide-react"
 import OrgEditDialog, { type OrgDetails } from "@/components/org-edit-dialog"
+import PlanDialog, { type PlanDetails } from "@/components/plan-dialog"
 
 export default function SettingsPage() {
+  const [plans, setPlans] = useState<PlanDetails[]>([
+    { id: "1", name: "Elite", prices: { QUARTERLY: 5000 } },
+  ])
+  const [planDialogOpen, setPlanDialogOpen] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<PlanDetails | null>(null)
   const [orgOpen, setOrgOpen] = useState(false)
   const initialOrg: OrgDetails = {
     name: "XZY company pvt ltd",
@@ -137,7 +143,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between border-b border-[#e4e7ec] px-4 py-3">
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-medium text-[#344054]">Subscription plans</h2>
-                  <button className="inline-flex items-center gap-2 rounded-md border border-[#e4e7ec] bg-white px-2 py-1 text-xs text-[#344054] hover:bg-[#f2f4f7]">
+                  <button onClick={() => { setEditingPlan(null); setPlanDialogOpen(true) }} className="inline-flex items-center gap-2 rounded-md border border-[#e4e7ec] bg-white px-2 py-1 text-xs text-[#344054] hover:bg-[#f2f4f7]">
                     <Plus className="h-3 w-3" /> Add
                   </button>
                 </div>
@@ -150,26 +156,53 @@ export default function SettingsPage() {
                 <div />
                 <div />
               </div>
-              <div className="grid grid-cols-[1fr_200px_220px_200px_80px_80px] items-center gap-4 px-6 py-3 border-t border-[#e4e7ec] text-sm">
-                <div>Elite</div>
-                <div>Quarterly</div>
-                <div>₹5000</div>
-                <div />
-                <div className="justify-self-end">
-                  <button className="rounded-md p-1.5 hover:bg-[#f2f4f7]" aria-label="edit plan">
-                    <Edit className="h-4 w-4 text-[#667085]" />
-                  </button>
-                </div>
-                <div className="justify-self-end">
-                  <button className="rounded-md p-1.5 hover:bg-[#f2f4f7]" aria-label="delete plan">
-                    <Trash2 className="h-4 w-4 text-[#667085]" />
-                  </button>
-                </div>
-              </div>
+              {plans.map((plan) => {
+                const allowed = Object.keys(plan.prices).map((k) =>
+                  k === 'WEEKLY' ? 'Weekly' : k === 'MONTHLY' ? 'Monthly' : 'Quarterly'
+                ).join(', ')
+                // choose a recommended price: prefer QUARTERLY else MONTHLY else WEEKLY
+                const recommended = plan.prices.QUARTERLY ?? plan.prices.MONTHLY ?? plan.prices.WEEKLY
+                return (
+                  <div key={plan.id} className="grid grid-cols-[1fr_200px_220px_200px_80px_80px] items-center gap-4 px-6 py-3 border-t border-[#e4e7ec] text-sm">
+                    <div>{plan.name}</div>
+                    <div>{allowed || '-'}</div>
+                    <div>{recommended != null ? `₹${recommended}` : '-'}</div>
+                    <div />
+                    <div className="justify-self-end">
+                      <button onClick={() => { setEditingPlan(plan); setPlanDialogOpen(true) }} className="rounded-md p-1.5 hover:bg-[#f2f4f7]" aria-label="edit plan">
+                        <Edit className="h-4 w-4 text-[#667085]" />
+                      </button>
+                    </div>
+                    <div className="justify-self-end">
+                      <button onClick={() => setPlans((prev) => prev.filter((p) => p.id !== plan.id))} className="rounded-md p-1.5 hover:bg-[#f2f4f7]" aria-label="delete plan">
+                        <Trash2 className="h-4 w-4 text-[#667085]" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </section>
         {/* Edit Organisation Dialog */}
           <OrgEditDialog open={orgOpen} onOpenChange={setOrgOpen} initial={initialOrg} onSave={() => setOrgOpen(false)} />
+          {/* Add/Edit Plan Dialog */}
+          <PlanDialog
+            open={planDialogOpen}
+            onOpenChange={(v) => { if (!v) setEditingPlan(null); setPlanDialogOpen(v) }}
+            initial={editingPlan}
+            onSave={(data) => {
+              // update or add
+              setPlans((prev) => {
+                if (data.id) {
+                  return prev.map((p) => (p.id === data.id ? { ...p, ...data } : p))
+                }
+                const newPlan = { ...data, id: String(Date.now()) }
+                return [...prev, newPlan]
+              })
+              setPlanDialogOpen(false)
+              setEditingPlan(null)
+            }}
+          />
         </main>
       </div>
     </div>
