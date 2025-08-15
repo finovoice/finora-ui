@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { UploadCloud, Trash2 } from "lucide-react"
+import FileUpload from "./file-upload"
 import { useState } from "react"
 
 export type OrgDetails = {
@@ -85,38 +85,46 @@ export default function OrgEditDialog({
           </div>
 
           {/* Logo uploader */}
-          <div className="mt-5 space-y-2">
-            <Label>Logo <span className="text-red-500">*</span></Label>
-            <div className="rounded-lg border border-[#e4e7ec] bg-[#fcfcfd]">
-              <div className="flex items-center justify-center text-center px-6 py-8 text-sm text-[#6941c6]">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="h-9 w-9 rounded-full bg-[#f2f4f7] flex items-center justify-center">
-                    <UploadCloud className="h-5 w-5 text-[#98a2b3]" />
-                  </div>
-                  <div>
-                    <button className="text-[#6941c6]">Click to upload</button> <span className="text-[#98a2b3]">or drag and drop</span>
-                  </div>
-                  <div className="text-[#98a2b3]">SVG, PNG or JPG (max. 400x400px)</div>
-                </div>
-              </div>
-            </div>
+          <div className="mt-5">
+            <FileUpload
+              label="Logo"
+              required
+              accept="image/*"
+              dimensions="max. 400x400px"
+              maxSize="2MB"
+              value={form.logoUrl}
+              fileName="logo.png"
+              onFileSelect={(file) => {
+                // Handle logo file selection
+                const url = URL.createObjectURL(file)
+                update("logoUrl", url)
+              }}
+              onFileDelete={() => {
+                update("logoUrl", null)
+              }}
+              showPreview
+            />
           </div>
 
           {/* Sign file row */}
-          <div className="mt-5 space-y-2">
-            <Label>Sign</Label>
-            <div className="rounded-lg border border-[#e4e7ec] px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-md bg-[#f2f4f7] text-[10px] flex items-center justify-center text-[#667085] font-semibold">JPG</div>
-                <div className="leading-tight">
-                  <div className="text-sm text-[#101828]">{form.signFileName || "Sign.jpg"}</div>
-                  <div className="text-xs text-[#98a2b3]">200 KB</div>
-                </div>
-              </div>
-              <button className="rounded-md p-1.5 hover:bg-[#f2f4f7]" aria-label="remove sign">
-                <Trash2 className="h-4 w-4 text-[#667085]" />
-              </button>
-            </div>
+          <div className="mt-5">
+            <FileUpload
+              label="Sign"
+              accept="image/*,.pdf"
+              dimensions="recommended 200x100px"
+              maxSize="1MB"
+              value={form.signFileName ? "/placeholder-sign.jpg" : null}
+              fileName={form.signFileName || "Sign.jpg"}
+              fileSize="200 KB"
+              onFileSelect={(file) => {
+                // Handle sign file selection
+                update("signFileName", file.name)
+              }}
+              onFileDelete={() => {
+                update("signFileName", null)
+              }}
+              showPreview={false}
+            />
           </div>
 
           <div className="mt-6">
