@@ -176,7 +176,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
                 />
                 <CurrencyInput
                   placeholder="Max"
-                  value={entryMax}
+                  value={!useRange ? '' : entryMax}
                   onChange={(e) => setEntryMax(e.target.value)}
                   disabled={!useRange}
                 />

@@ -11,6 +11,7 @@ import PreviewPanel, { type PreviewDraft } from "@/components/preview-panel"
 import { startServerAPI } from "@/services";
 import { getTradesAPI } from "@/services/trades"
 import type { TradeType } from "@/constants/types"
+import ExitTradeDialog from "@/components/exit-trade-dialog"
 
 export default function Page() {
   const [trades, setTrades] = useState<TradeType[]>([])
@@ -21,6 +22,8 @@ export default function Page() {
   const [initialSymbol, setInitialSymbol] = useState<string | undefined>(undefined)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewDraft, setPreviewDraft] = useState<PreviewDraft | null>(null)
+  const [exitOpen, setExitOpen] = useState(false)
+  const [exitTrade, setExitTrade] = useState<TradeType | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [editTrade, setEditTrade] = useState<EditableTrade | null>(null)
 
@@ -54,6 +57,11 @@ export default function Page() {
   function handoffToPreview(draft: PreviewDraft) {
     setPreviewDraft(draft)
     setPreviewOpen(true)
+  }
+
+  function openExit(trade: TradeType) {
+    setExitTrade(trade)
+    setExitOpen(true)
   }
 
   function openEdit(t: TradeType) {
@@ -137,6 +145,7 @@ export default function Page() {
                   key={t.id}
                   trade={t}
                   onOpen={() => openCreate(t.stock_name.split(" ")[0])}
+                  onExit={() => openExit(t)}
                   onEdit={() => openEdit(t)}
                 />
               ))}
@@ -154,16 +163,22 @@ export default function Page() {
           <EditTradeDialog
             open={editOpen}
             onOpenChange={setEditOpen}
-            trade={editTrade ?? undefined}
+            trade={editTrade}
             onSubmit={(updated) => {
-              console.log("updated trade", updated)
             }}
+          />
+
+          <ExitTradeDialog
+            open={exitOpen}
+            onOpenChange={setExitOpen}
+            trade={exitTrade}
           />
 
           {/* Preview overlay */}
           <PreviewPanel open={previewOpen} onClose={() => setPreviewOpen(false)} draft={previewDraft} />
         </main>
       </div>
+
     </div>
   )
 }

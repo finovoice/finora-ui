@@ -2,12 +2,17 @@
 
 import { useMemo, useState } from "react"
 import { Card } from "@/components/ui/card"
-import { ChevronDown, ChevronUp, Clock3, Edit3, EllipsisVertical, Flag, Share2 } from "lucide-react"
+import { ChevronDown, ChevronUp, Clock3, Edit3, EllipsisVertical, Flag, LogOut, Share2 } from "lucide-react"
 import type { TradeType } from "@/constants/types"
 
-type Props = { trade: TradeType; onOpen?: () => void; onEdit?: (trade: TradeType) => void }
+type Props = {
+  trade: TradeType;
+  onOpen?: () => void;
+  onExit?: (trade: TradeType) => void;
+  onEdit?: (trade: TradeType) => void
+}
 
-export default function TradeItem({ trade, onOpen, onEdit }: Props) {
+export default function TradeItem({ trade, onOpen, onEdit, onExit }: Props) {
   const [open, setOpen] = useState<boolean>(false)
 
   const side = trade.order
@@ -46,8 +51,15 @@ export default function TradeItem({ trade, onOpen, onEdit }: Props) {
         <div className="ml-auto flex items-center gap-1 text-[#667085]">
           {!open && (
             <>
-              <button className="rounded-md p-2 hover:bg-[#f2f4f7]" aria-label="Share">
-                <Share2 className="h-4 w-4" />
+              <button
+                className="rounded-md p-2 hover:bg-[#f2f4f7]"
+                aria-label="Exit">
+                <LogOut className="h-4 w-4"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onExit?.(trade)
+                  }}
+                />
               </button>
               <button
                 className="rounded-md p-2 hover:bg-[#f2f4f7]"

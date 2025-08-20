@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { Ban, Bike, Clock3, Flag, Layers3, Send, X } from "lucide-react"
+import { createTradeAPI, partialUpdateTradeAPI } from "@/services/trades"
 
 export type EditableTrade = {
   id?: string
@@ -52,6 +53,8 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
   const [entryMax, setEntryMax] = useState<string>(initial.entryMax ?? "")
   const [useRange, setUseRange] = useState<boolean>(!!initial.useRange)
   const [stoploss, setStoploss] = useState<string>(initial.stoploss ?? "")
+  const [blankStoplossWarning, setBlankStoplossWarning] = useState<boolean>(false)
+  const [blankTargetWarning, setBlankTargetWarning] = useState<boolean>(false)
   const [targets, setTargets] = useState<string[]>(initial.targets?.length ? initial.targets : [""])
 
   // Sync when a different trade is opened
@@ -76,8 +79,18 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
     setTargets((t) => t.filter((_, i) => i !== idx))
   }
 
-  function handleSubmit() {
-    const updated: EditableTrade = {
+  async function handleSubmit() {
+    const cleanedTargets = targets.map(t => t.trim()).filter(Boolean)
+
+    setBlankStoplossWarning(!stoploss);
+    setBlankTargetWarning(cleanedTargets.length === 0)
+
+    if (!stoploss || cleanedTargets.length === 0) {
+      console.warn("Please fill all required fields: stoploss, at least one target")
+      return
+    }
+
+    const updatedPayload: EditableTrade = {
       id: trade?.id,
       side: order,
       scrip: initial.scrip,
@@ -88,23 +101,27 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
       stoploss,
       targets,
     }
-    onSubmit?.(updated)
+    try {
+      const response = await partialUpdateTradeAPI(updatedPayload as EditableTrade, trade?.id)
+    } catch (e) {
+      console.warn(e)
+    }
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl p-0 overflow-hidden">
-        <DialogHeader className="border-b border-[#e4e7ec] px-6 py-4">
-          <DialogTitle className="text-xl text-[#101828]">Edit trade</DialogTitle>
+        <DialogHeader className="border-b border-[#e4e7ec] px-6 py-3">
+          <DialogTitle className="text-sm text-[#101828]">Edit trade</DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 py-5 space-y-6">
+        <div className="px-6 pt-4 space-y-3">
           {/* Order */}
           <Row>
             <FieldLabel icon={<Bike className="h-4 w-4" />} text="Order" />
             <RadioGroup
-              className="flex gap-6"
+              className="flex gap-6 text-sm"
               value={order}
               onValueChange={(v: "BUY" | "SELL" | "HOLD") => setOrder(v)}
             >
@@ -116,11 +133,11 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
 
           {/* Scrip (locked) */}
           <Row>
-            <FieldLabel icon={<Layers3 className="h-4 w-4" />} text="Scrip" />
+            <FieldLabel icon={<Layers3 className="h-4 w-4 text-gray-400" />} lock text="Scrip" />
             <Input
               value={initial.scrip}
               readOnly
-              className="h-10 rounded-md border-[#e4e7ec] bg-[#f9fafb] text-[#475467]"
+              className="h-8 rounded-md border-[#e4e7ec] bg-[#f9fafb] text-gray-400"
             />
           </Row>
 
@@ -138,22 +155,24 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
             </RadioGroup>
           </Row>
 
-          {/* Entry */}
+          {/* Entry (locked) */}
           <Row>
-            <FieldLabel icon={<Clock3 className="h-4 w-4 rotate-180" />} text="Entry" />
+            <FieldLabel icon={<Clock3 className="h-4 w-4 rotate-180 text-gray-400" />} lock text="Entry" />
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <CurrencyInput placeholder="Min" value={entryMin} onChange={(e) => setEntryMin(e.target.value)} />
+                <CurrencyInput
+                  placeholder="Min"
+                  value={entryMin}
+                  disabled />
                 <CurrencyInput
                   placeholder="Max"
                   value={entryMax}
-                  onChange={(e) => setEntryMax(e.target.value)}
-                  disabled={!useRange}
+                  disabled
                 />
               </div>
               <div className="flex items-center gap-2 self-end">
-                <Switch id="range-edit" checked={useRange} onCheckedChange={setUseRange} />
-                <Label htmlFor="range-edit" className="text-sm text-[#667085]">
+                <Switch id="range-edit" checked={false} />
+                <Label htmlFor="range-edit" className="text-sm text-gray-400">
                   Range
                 </Label>
               </div>
@@ -163,7 +182,7 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
           {/* Stoploss */}
           <Row>
             <FieldLabel icon={<Ban className="h-4 w-4" />} text="Stoploss" />
-            <CurrencyInput placeholder="" value={stoploss} onChange={(e) => setStoploss(e.target.value)} />
+            <CurrencyInput blankInputWarning={blankStoplossWarning} placeholder="" value={stoploss} onChange={(e) => setStoploss(e.target.value)} />
           </Row>
 
           {/* Targets */}
@@ -173,19 +192,22 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
               {targets.map((t, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <CurrencyInput
+                    blankInputWarning={blankTargetWarning}
                     placeholder=""
                     value={t}
                     onChange={(e) => updateTarget(i, e.target.value)}
                     className="flex-1"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeTarget(i)}
-                    aria-label="Remove target"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#e4e7ec] text-[#667085] hover:bg-[#f2f4f7]"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  {targets.length > 1 ?
+                    <button
+                      type="button"
+                      onClick={() => removeTarget(i)}
+                      aria-label="Remove target"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md  text-[#667085] hover:bg-[#f2f4f7]"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    : ''}
                 </div>
               ))}
               <button
@@ -225,9 +247,9 @@ function Row({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 gap-3 items-start sm:grid-cols-[140px_1fr]">{children}</div>
 }
 
-function FieldLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
+function FieldLabel({ icon, text, lock = false }: { icon: React.ReactNode; text: string, lock?: boolean }) {
   return (
-    <div className="flex items-center gap-2 text-[#344054] font-medium">
+    <div className={`flex items-center gap-2  text-sm ${lock ? 'text-gray-400' : ''}`}>
       <span className="text-[#667085]">{icon}</span>
       <span>{text}</span>
     </div>
@@ -238,22 +260,23 @@ function RadioItem({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <RadioGroupItem id={`edit-${value}`} value={value} />
-      <Label htmlFor={`edit-${value}`} className="text-sm text-[#475467]">
+      <Label htmlFor={`edit-${value}`} className="text-xs text-[#475467]">
         {label}
       </Label>
     </div>
   )
 }
 
-function CurrencyInput(props: React.ComponentProps<typeof Input> & { disabled?: boolean }) {
-  const { className, disabled, ...rest } = props
+function CurrencyInput(props: React.ComponentProps<typeof Input> & { disabled?: boolean; blankInputWarning?: boolean }) {
+  const { className, disabled, blankInputWarning = false, ...rest } = props
   return (
     <div className="relative w-full">
       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]">{"₹"}</span>
       <Input
+        type="number"
         {...rest}
         disabled={disabled}
-        className={`h-10 pl-8 rounded-md border-[#e4e7ec] placeholder:text-[#98a2b3] focus-visible:ring-0 focus-visible:ring-offset-0 ${className ?? ""}`}
+        className={`h-8 pl-8 rounded-md ${blankInputWarning ? 'border-red-500' : 'border-[#e4e7ec]'} placeholder:text-[#98a2b3] focus-visible:ring-0 focus-visible:ring-offset-0 ${className ?? ""}`}
       />
     </div>
   )
