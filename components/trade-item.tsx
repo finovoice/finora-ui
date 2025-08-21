@@ -9,10 +9,11 @@ type Props = {
   trade: TradeType;
   onOpen?: () => void;
   onExit?: (trade: TradeType) => void;
-  onEdit?: (trade: TradeType) => void
+  onEdit?: (trade: TradeType) => void;
+  onPreview?: (trade: TradeType) => void;
 }
 
-export default function TradeItem({ trade, onOpen, onEdit, onExit }: Props) {
+export default function TradeItem({ trade, onOpen, onEdit, onExit, onPreview }: Props) {
   const [open, setOpen] = useState<boolean>(false)
 
   const side = trade.order
@@ -61,6 +62,7 @@ export default function TradeItem({ trade, onOpen, onEdit, onExit }: Props) {
                   }}
                 />
               </button>
+
               <button
                 className="rounded-md p-2 hover:bg-[#f2f4f7]"
                 aria-label="Edit"
@@ -71,7 +73,14 @@ export default function TradeItem({ trade, onOpen, onEdit, onExit }: Props) {
               >
                 <Edit3 className="h-4 w-4" />
               </button>
-              <button className="rounded-md p-2 hover:bg-[#f2f4f7]" aria-label="History">
+
+              <button
+                className="rounded-md p-2 hover:bg-[#f2f4f7]"
+                aria-label="History"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onPreview?.(trade)
+                }}>
                 <Clock3 className="h-4 w-4" />
               </button>
             </>

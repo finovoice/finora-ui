@@ -11,6 +11,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { Ban, Bike, Clock3, Flag, Layers3, Send, X } from "lucide-react"
 import { createTradeAPI, partialUpdateTradeAPI } from "@/services/trades"
+import { showToast } from './ui/toast-manager';
+import Error from "next/error"
+
+
 
 export type EditableTrade = {
   id?: string
@@ -56,6 +60,7 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
   const [blankStoplossWarning, setBlankStoplossWarning] = useState<boolean>(false)
   const [blankTargetWarning, setBlankTargetWarning] = useState<boolean>(false)
   const [targets, setTargets] = useState<string[]>(initial.targets?.length ? initial.targets : [""])
+  const [sending, setSending] = useState(false)
 
   // Sync when a different trade is opened
   useEffect(() => {
@@ -66,6 +71,8 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
     setUseRange(!!initial.useRange)
     setStoploss(initial.stoploss ?? "")
     setTargets(initial.targets?.length ? initial.targets : [""])
+    setBlankStoplossWarning(false)
+    setBlankTargetWarning(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial.id, open])
 
@@ -87,9 +94,15 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
 
     if (!stoploss || cleanedTargets.length === 0) {
       console.warn("Please fill all required fields: stoploss, at least one target")
+      showToast({
+        title: 'Warning',
+        description: "Please fill all required fields: stoploss, at least one target",
+        type: 'warning',
+        duration: 3000
+      })
       return
     }
-
+    setSending(true)
     const updatedPayload: EditableTrade = {
       id: trade?.id,
       side: order,
@@ -103,10 +116,24 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
     }
     try {
       const response = await partialUpdateTradeAPI(updatedPayload as EditableTrade, trade?.id)
+      showToast({
+        title: 'Success',
+        description: "Successfully edited the Trade",
+        type: 'success',
+        duration: 3000
+      })
     } catch (e) {
       console.warn(e)
+      showToast({
+        title: 'Error',
+        description: 'An error has occured',
+        type: 'error',
+        duration: 3000
+      })
+    } finally {
+      setSending(false)
+      onOpenChange(false)
     }
-    onOpenChange(false)
   }
 
   return (
@@ -230,9 +257,10 @@ export default function EditTradeDialog({ open, onOpenChange, trade, onSubmit }:
             <Button
               type="button"
               onClick={handleSubmit}
+              disabled={sending}
               className="h-10 w-full justify-center gap-2 rounded-md bg-[#7f56d9] text-white hover:bg-[#6941c6]"
             >
-              <span>Send update</span>
+              <span>{sending ? "Sending..." : "Send Update"}</span>
               <Send className="h-4 w-4" />
             </Button>
             <p className="mt-2 text-center text-xs text-[#667085]">Update will be sent to the same clients</p>

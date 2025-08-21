@@ -11,9 +11,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { Ban, Bike, Clock3, Flag, FlagIcon, Layers3, Send, X } from "lucide-react"
 import { TradeType } from "@/constants/types"
-import { on } from "node:stream"
 import { exitTradeAPI } from "@/services/trades"
-
+import { showToast } from './ui/toast-manager'
 
 type Props = {
     open: boolean
@@ -30,16 +29,37 @@ export type ExitTrade = {
 export default function ExitTradeDialog({ open, onOpenChange, trade }: Props) {
 
     const [useRange, setUseRange] = useState(false)
-    const [exitMin, setexitMin] = useState<string>("")
-    const [exitMax, setexitMax] = useState<string>("")
+    const [exitMin, setExitMin] = useState<string>("")
+    const [exitMax, setExitMax] = useState<string>("")
+    const [blankExitMinWarning, setBlankExitMinWarning] = useState(false)
+    const [blankExitMaxWarning, setBlankExitMaxWarning] = useState(false)
+    const [sending, setSending] = useState(false)
 
     useEffect(() => {
-        setexitMin("")
-        setexitMax("")
+        setExitMin("")
+        setExitMax("")
         setUseRange(false)
+        setBlankExitMinWarning(false)
+        setBlankExitMaxWarning(false)
     }, [trade?.id, open])
 
     async function handleSubmit() {
+
+        setBlankExitMinWarning(!exitMin)
+        useRange && setBlankExitMaxWarning(!exitMax)
+
+        if (!exitMin || (useRange && !exitMax)) {
+            console.warn(`Pls fill all required field/s: Min Exit ${useRange ? "and Max Exit" : ''}`)
+            showToast({
+                title: 'Warning',
+                description: `Pls fill all required field/s: Min Exit ${useRange ? "and Max Exit" : ''}`,
+                type: 'warning',
+                duration: 3000
+            })
+            return
+        }
+
+        setSending(true)
         const id: string | undefined = trade?.id
         const exitTradePayload: ExitTrade = {
             id: id,
@@ -48,10 +68,23 @@ export default function ExitTradeDialog({ open, onOpenChange, trade }: Props) {
         }
         try {
             const response = await exitTradeAPI(exitTradePayload as any, trade?.id)
+            showToast({
+                title: 'Success',
+                description: 'Successfully exited the trade',
+                type: 'success',
+                duration: 3000
+            })
         } catch (e) {
             console.warn(e)
+            showToast({
+                title: 'Error',
+                description: `An error has occured`,
+                type: 'error',
+                duration: 3000
+            })
         } finally {
             onOpenChange(false)
+            setSending(false)
         }
     }
 
@@ -83,16 +116,18 @@ export default function ExitTradeDialog({ open, onOpenChange, trade }: Props) {
                                 <CurrencyInput
                                     placeholder="Min"
                                     value={exitMin}
-                                    onChange={(e) => setexitMin(e.target.value)}
+                                    blankInputWarning={blankExitMinWarning}
+                                    onChange={(e) => setExitMin(e.target.value)}
                                 />
                                 <CurrencyInput
                                     placeholder="Max"
                                     value={!useRange ? '' : exitMax}
-                                    onChange={(e) => setexitMax(e.target.value)}
+                                    blankInputWarning={blankExitMaxWarning}
+                                    onChange={(e) => setExitMax(e.target.value)}
                                     disabled={!useRange}
                                 />
                                 <div className="flex items-center gap-2 self-end">
-                                    <Switch id="range-edit" checked={useRange} onCheckedChange={setUseRange} />
+                                    <Switch id="range-edit" checked={useRange} onCheckedChange={() => { setUseRange(!useRange); setBlankExitMaxWarning(false) }} />
                                     <Label htmlFor="range-edit" className="text-sm">
                                         Range
                                     </Label>
@@ -108,9 +143,10 @@ export default function ExitTradeDialog({ open, onOpenChange, trade }: Props) {
                         <Button
                             type="button"
                             onClick={handleSubmit}
+                            disabled={sending}
                             className="h-10 w-full justify-center gap-2 rounded-md bg-[#7f56d9] text-white hover:bg-[#6941c6]"
                         >
-                            <span>Send update</span>
+                            <span>{sending ? 'Sending' : 'Send Update'}</span>
                             <Send className="h-4 w-4" />
                         </Button>
                         <p className="mt-2 text-center text-xs text-[#667085]">Update will be sent to the same clients</p>

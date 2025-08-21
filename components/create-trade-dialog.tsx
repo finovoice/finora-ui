@@ -12,6 +12,7 @@ import ScripCombobox from "./scrip-combobox"
 import { RecipientsSelect, type Recipient } from "./recipients-select"
 import { createTradeAPI } from "@/services/trades"
 import { createCohortAPI } from "@/services/trades"
+import { showToast } from './ui/toast-manager'
 
 type Props = {
   open: boolean
@@ -37,7 +38,6 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
   const [sending, setSending] = useState<boolean>(false)
   const [toggleRecipientsMenu, setToggleRecipientsMenu] = useState(false)
 
-
   function updateTarget(idx: number, val: string) {
     setTargets((t) => t.map((v, i) => (i === idx ? val : v)))
   }
@@ -50,7 +50,6 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
     setTargets((t) => t.filter((_, i) => i !== index))
   }
 
-
   async function onSend() {
     const cleanedTargets = targets.map(t => t.trim()).filter(Boolean)
 
@@ -61,10 +60,22 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
 
     if (!scrip || !entryMin || !stoploss || cleanedTargets.length === 0) {
       console.warn("Please fill all required fields: scrip, entry, stoploss, at least one target")
+      showToast({
+        title: 'Warning',
+        description: 'Please fill all required fields: scrip, entry, stoploss, at least one target',
+        type: 'warning',
+        duration: 3000
+      })
       return
     }
     if (order === "HOLD") {
       console.warn("Please select BUY or SELL")
+      showToast({
+        title: 'Warning',
+        description: 'Please select BUY or SELL',
+        type: 'warning',
+        duration: 3000
+      })
       return
     }
 
@@ -81,9 +92,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
     });
 
     setSending(true)
-
     let createdCohort;
-
     try {
       const cohortPayload: any = {
         name: "New Cohort name 2",
@@ -109,17 +118,28 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
         cohort: createdCohort?.id
       }
       const response = await createTradeAPI(tradePayload as any)
+      showToast({
+        title: 'Success',
+        description: 'Successfully created the Trade',
+        type: 'success',
+        duration: 3000
+      })
       onOpenChange(false)
     } catch (e) {
       console.error("An error occurred during API calls: ", e)
+      showToast({
+        title: 'Error',
+        description: `An error has occured`,
+        type: 'error',
+        duration: 3000
+      })
     } finally {
       setSending(false)
     }
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 bg-white border"
-      >
+      <DialogContent className="p-0 bg-white border">
         <DialogHeader className="border-b border-[#e4e7ec] px-6 py-3">
           <DialogTitle className="text-sm text-[#101828]">Create trade</DialogTitle>
         </DialogHeader>
@@ -201,9 +221,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
                 value={stoploss}
                 onChange={(e) => setStoploss(e.target.value)}
               />
-              {/* <span className="text-red-800 text-xs">* Required</span> */}
             </span>
-
           </div>
 
           {/* Targets */}

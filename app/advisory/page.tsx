@@ -12,6 +12,9 @@ import { startServerAPI } from "@/services";
 import { getTradesAPI } from "@/services/trades"
 import type { TradeType } from "@/constants/types"
 import ExitTradeDialog from "@/components/exit-trade-dialog"
+import TimelineDisplay from "@/components/timeline-display"
+import { ToastManager } from "@/components/ui/toast-manager"
+import { showToast } from "@/components/ui/toast-manager"
 
 export default function Page() {
   const [trades, setTrades] = useState<TradeType[]>([])
@@ -20,8 +23,8 @@ export default function Page() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [initialSymbol, setInitialSymbol] = useState<string | undefined>(undefined)
-  const [previewOpen, setPreviewOpen] = useState(false)
-  const [previewDraft, setPreviewDraft] = useState<PreviewDraft | null>(null)
+  const [timelineOpen, setTimelineOpen] = useState(false)
+  const [timelineTrade, setTimelineTrade] = useState<TradeType | null>(null)
   const [exitOpen, setExitOpen] = useState(false)
   const [exitTrade, setExitTrade] = useState<TradeType | null>(null)
   const [editOpen, setEditOpen] = useState(false)
@@ -39,6 +42,12 @@ export default function Page() {
         if (!mounted) return
         console.error("Error fetching trades:", e)
         setError(e?.message || "Failed to load trades")
+        showToast({
+          title: "Error",
+          description: `Error: Failed to load trades`,
+          type: 'error',
+          duration: 3000
+        })
       } finally {
         if (mounted) setLoading(false)
       }
@@ -54,11 +63,6 @@ export default function Page() {
     setCreateOpen(true)
   }
 
-  function handoffToPreview(draft: PreviewDraft) {
-    setPreviewDraft(draft)
-    setPreviewOpen(true)
-  }
-
   function openExit(trade: TradeType) {
     setExitTrade(trade)
     setExitOpen(true)
@@ -69,15 +73,20 @@ export default function Page() {
       id: t.id,
       side: t.order,
       scrip: t.stock_name,
-      horizon: (t.timehorizon || "INTRADAY").toUpperCase() as any,
-      entryMin: "80150",
-      entryMax: "80312",
+      horizon: (t.timehorizon).toUpperCase() as any,
+      entryMin: t.entry,
+      entryMax: "Max",
       useRange: true,
-      stoploss: t.stoploss ?? "80000",
+      stoploss: t.stoploss || undefined,
       targets: Array.isArray(t.targets) ? t.targets : ["82000", "103000"],
     }
     setEditTrade(editable)
     setEditOpen(true)
+  }
+
+  function openTimeline(trade: TradeType) {
+    setTimelineOpen(true)
+    setTimelineTrade(trade)
   }
 
   return (
@@ -85,7 +94,6 @@ export default function Page() {
       <div className="mx-auto flex">
         <Sidebar />
         <main className="flex-1">
-          {/* Header */}
           <header className="sticky top-0 z-10 bg-[#fafafa] border-b border-[#e4e7ec]">
             <div className="flex items-center justify-between px-6 py-4">
               <div className="flex items-center gap-3">
@@ -106,7 +114,7 @@ export default function Page() {
                 </Button>
               </div>
             </div>
-            {/* Filters */}
+
             <div className="px-6 pb-4">
               <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[#e4e7ec] bg-white px-3 py-2">
                 <FilterButton label="All Orders" />
@@ -128,7 +136,6 @@ export default function Page() {
             </div>
           </header>
 
-          {/* List */}
           <section className="px-6 py-4">
             <div className="flex flex-col gap-3">
               {loading && (
@@ -147,19 +154,18 @@ export default function Page() {
                   onOpen={() => openCreate(t.stock_name.split(" ")[0])}
                   onExit={() => openExit(t)}
                   onEdit={() => openEdit(t)}
+                  onPreview={() => openTimeline(t)}
                 />
               ))}
             </div>
           </section>
 
-          {/* Dialog */}
           <CreateTradeDialog
             open={createOpen}
             onOpenChange={setCreateOpen}
             initialSymbol={initialSymbol}
           />
 
-          {/* Edit Dialog */}
           <EditTradeDialog
             open={editOpen}
             onOpenChange={setEditOpen}
@@ -174,8 +180,13 @@ export default function Page() {
             trade={exitTrade}
           />
 
-          {/* Preview overlay */}
-          <PreviewPanel open={previewOpen} onClose={() => setPreviewOpen(false)} draft={previewDraft} />
+          <TimelineDisplay
+            open={timelineOpen}
+            onOpenChange={setTimelineOpen}
+            trade={timelineTrade}
+          />
+
+          <ToastManager />
         </main>
       </div>
 

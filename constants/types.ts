@@ -26,8 +26,16 @@ export type TradeType = {
   created_at: string
   updated_at: string
   is_active: boolean
-  audit_trails: unknown[]
+  audit_trails: AuditTrail[]
 }
+
+// Details received from the trade object
+export type AuditTrail = {
+  account: string;
+  changed_to: Record<string, string>;
+  updated_at: string;
+  changed_from: Record<string, string>;
+};
 
 // A minimal UI-friendly trade type (optional mapping helper)
 export type UITrade = {

@@ -91,11 +91,6 @@ export default function PreviewPanel({
               <RecipientsSelect
                 selected={selected}
                 onChange={setSelected}
-                onPost={() => {
-                  // Post handler (demo)
-                  console.log("Post trade to:", selected)
-                  onClose()
-                }}
               />
             </div>
             <button
