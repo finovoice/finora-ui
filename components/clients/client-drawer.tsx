@@ -3,11 +3,12 @@
 import * as React from "react"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Phone, Mail, PencilLine, RefreshCcw } from "lucide-react"
+import { Phone, Mail, PencilLine, RefreshCcw, Clock, Target, Flag, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import TradeFilters from "@/components/trades/trade-filters"
 import TradeHeader from "@/components/trades/trade-header"
-import TradeCard from "@/components/trades/trade-card"
+import TradeStat from "@/components/trades/trade-stat"
+import DateStack from "@/components/trades/date-stack"
 
 export type Client = {
   id: string
@@ -91,16 +92,28 @@ export default function ClientDrawer({
               <TradeFilters />
 
               {/* Example future trade (collapsed header style) */}
-              <div className="rounded-lg border border-[#e4e7ec] bg-white">
-                <TradeHeader
-                  order="BUY"
-                  symbol="TATACHEM 25JAN FUT"
-                  segment="EQUITY"
-                  horizon="INTRADAY"
-                  placedAt="24 Oct 2024 10:28:20 AM"
-                  defaultOpen={false}
-                />
-              </div>
+
+                <div className="rounded-lg border border-[#e4e7ec] bg-white">
+                    <TradeHeader
+                        order="BUY"
+                        symbol="TATACHEM"
+                        segment="EQUITY"
+                        horizon="SWING"
+                        placedAt="24 Oct 2024 11:15:58 AM"
+                        defaultOpen={false}
+                    >
+                        <div className="mt-1 grid grid-cols-1 items-start gap-4 sm:grid-cols-[1fr_auto]">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                <TradeStat icon={<Clock className="h-4 w-4 text-[#98a2b3]" />} label="Entry" value={<span>80124 - 80312</span>} />
+                                <TradeStat icon={<Target className="h-4 w-4 text-[#98a2b3]" />} label="Stoploss" value={<span>80000</span>} />
+                                <TradeStat icon={<Flag className="h-4 w-4 text-[#98a2b3]" />} label="Exited" value={<span className="inline-flex items-center gap-2">82000 <ArrowRight className="h-3 w-3 text-[#98a2b3]" /> 103000</span>} />
+                            </div>
+                            <div className="hidden sm:flex flex-col items-end gap-1 pr-1">
+                                <DateStack top="2 Nov 2024" bottom="1:15:28 PM" icon={<Flag className="h-4 w-4 text-[#98a2b3]" />} />
+                            </div>
+                        </div>
+                    </TradeHeader>
+                </div>
 
               {/* Section divider: Exited */}
               <div className="flex items-center gap-3 px-2">
@@ -109,20 +122,28 @@ export default function ClientDrawer({
                 <div className="h-px w-full bg-[#e4e7ec]" />
               </div>
 
-              {/* Example exited trade card */}
-              <TradeCard
-                order="Buy"
-                symbol="TATACHEM"
-                segment="EQUITY"
-                horizon="SWING"
-                returnPct={10}
-                entryRange="80124 - 80312"
-                stoploss="80000"
-                exitFrom="82000"
-                exitTo="103000"
-                placedAt="24 Oct 2024\n11:15:58 AM"
-                exitedAt="2 Nov 2024\n1:15:28 PM"
-              />
+              {/* Example exited trade (accordion style, same as Trade) */}
+              <div className="rounded-lg border border-[#e4e7ec] bg-white">
+                <TradeHeader
+                  order="BUY"
+                  symbol="TATACHEM"
+                  segment="EQUITY"
+                  horizon="SWING"
+                  placedAt="24 Oct 2024 11:15:58 AM"
+                  defaultOpen={false}
+                >
+                  <div className="mt-1 grid grid-cols-1 items-start gap-4 sm:grid-cols-[1fr_auto]">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                      <TradeStat icon={<Clock className="h-4 w-4 text-[#98a2b3]" />} label="Entry" value={<span>80124 - 80312</span>} />
+                      <TradeStat icon={<Target className="h-4 w-4 text-[#98a2b3]" />} label="Stoploss" value={<span>80000</span>} />
+                      <TradeStat icon={<Flag className="h-4 w-4 text-[#98a2b3]" />} label="Exited" value={<span className="inline-flex items-center gap-2">82000 <ArrowRight className="h-3 w-3 text-[#98a2b3]" /> 103000</span>} />
+                    </div>
+                    <div className="hidden sm:flex flex-col items-end gap-1 pr-1">
+                      <DateStack top="2 Nov 2024" bottom="1:15:28 PM" icon={<Flag className="h-4 w-4 text-[#98a2b3]" />} />
+                    </div>
+                  </div>
+                </TradeHeader>
+              </div>
 
               {/* Footer controls */}
               <div className="flex items-center justify-between border-t border-[#e4e7ec] px-2 pt-4">

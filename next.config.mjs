@@ -9,6 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    // Ensure lucide-react is optimized into a stable vendor chunk
+    optimizePackageImports: ["lucide-react"],
+  },
 }
 
 export default nextConfig
