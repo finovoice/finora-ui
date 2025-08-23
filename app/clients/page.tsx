@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertTriangle, ChevronDown, MessageSquare, RefreshCcw, Search, Upload } from 'lucide-react'
 import { useState } from "react"
-import ClientTradesDrawer from "@/components/clients/client-trades-drawer"
+import ClientDrawer from "@/components/clients/client-drawer"
 
 type ClientRow = {
   id: string
@@ -161,26 +161,14 @@ export default function ClientsPage() {
               </ul>
             </div>
           </section>
+          {/* Drawer */}
+          <ClientDrawer
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+            client={activeClient as any}
+          />
         </main>
       </div>
-
-      {/* Right-side drawer for a single client */}
-      <ClientTradesDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        client={
-          activeClient
-            ? {
-                id: activeClient.id,
-                name: activeClient.name,
-                phone: activeClient.phone,
-                email: activeClient.email,
-                plan: activeClient.plan,
-                risk: activeClient.risk,
-              }
-            : null
-        }
-      />
     </div>
   )
 }
