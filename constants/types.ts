@@ -62,3 +62,33 @@ export type CohortType = {
   created_at: string
   is_active: boolean
 }
+
+
+export type ClientType = {
+    id: number
+    phone_number: string
+    email: string
+    pancard: string
+    organisation: number
+    assigned_rm: {
+      id: number
+      email: string
+      phone_number: string
+      type: string
+      is_admin: boolean
+      is_org_admin: boolean
+    }
+    profile: string
+    first_name: string
+    last_name: string
+    ekyc: string
+    risk: string
+    lead_stage: string
+    signed_contract_url: string | null
+    plan: string
+    start_date: string
+    end_date: string | null
+    is_converted_to_client: boolean
+    created_at: string
+    updated_at: string
+}

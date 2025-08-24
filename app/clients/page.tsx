@@ -5,36 +5,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertTriangle, ChevronDown, MessageSquare, RefreshCcw, Search, Upload } from 'lucide-react'
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import ClientDrawer from "@/components/clients/client-drawer"
+import { getClientsAPI } from "@/services/clients"
+import type { ClientType } from "@/constants/types"
+import type { Client as DrawerClient } from "@/components/clients/client-drawer"
 
-type ClientRow = {
-  id: string
-  name: string
-  plan: "Elite" | "Lite"
-  daysLeft: number
-  totalDays: number
-  rm: string
-  risk: "Aggressive" | "Conservative" | "Moderate"
-  phone?: string
-  email?: string
-  noContract?: boolean
-  unread?: boolean
-}
 
-const clients: ClientRow[] = [
-  { id: "1", name: "Liam Anderson", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", unread: true, phone: "+91-9876543210", email: "liam.anderson@email.com" },
-  { id: "2", name: "Roopkumari Shankar", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", noContract: true, phone: "+91-9876500001", email: "r.shankar@email.com" },
-  { id: "3", name: "Coop Cooper", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", phone: "+91-9876500002", email: "coop.cooper@email.com" },
-  { id: "4", name: "Shawn Hennasey", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Olivia Rhye", risk: "Aggressive", phone: "+91-9876500003", email: "shawn.h@email.com" },
-  { id: "5", name: "Shawn Hennasey", plan: "Elite", daysLeft: 29, totalDays: 90, rm: "Virendra Pal", risk: "Conservative", phone: "+91-9876500004", email: "shawn2@email.com" },
-]
 
 export default function ClientsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [activeClient, setActiveClient] = useState<ClientRow | null>(null)
+  const [activeClient, setActiveClient] = useState<ClientType | null>(null)
+  const [clients, setClients] = useState<ClientType[]>([])
 
-  function openActionsDrawer(client: ClientRow) {
+  useEffect(() => {
+    getClientsAPI().then(setClients).catch(() => setClients([]))
+  }, [])
+
+  function openActionsDrawer(client: ClientType) {
     setActiveClient(client)
     setDrawerOpen(true)
   }
@@ -109,8 +97,8 @@ export default function ClientsPage() {
                   <li key={c.id} className="grid grid-cols-[1.4fr_2fr_1fr_1fr_64px] items-center px-4 py-3">
                     {/* Client */}
                     <div className="min-w-0">
-                      <div className="truncate text-[14px] text-[#1f2937]">{c.name}</div>
-                      {c.noContract && (
+                      <div className="truncate text-[14px] text-[#1f2937]">{displayName(c)}</div>
+                      {!c.signed_contract_url && (
                         <div className="mt-1 inline-flex items-center gap-1 text-xs text-[#b54708]">
                           <AlertTriangle className="h-3.5 w-3.5" />
                           <span>No contract</span>
@@ -131,13 +119,13 @@ export default function ClientsPage() {
                       <div className="shrink-0 text-right text-xs text-[#344054]">
                         <div className="leading-4">
                           <span className="text-[#667085]">Renewal in</span>{" "}
-                          <span className="font-semibold">{c.daysLeft} days</span>
+                          <span className="font-semibold">{daysLeft(c)} days</span>
                         </div>
                       </div>
                     </div>
 
                     {/* RM */}
-                    <div className="text-sm text-[#475467]">{c.rm}</div>
+                    <div className="text-sm text-[#475467]">{c.assigned_rm?.email ?? "—"}</div>
 
                     {/* Risk */}
                     <div className="text-sm text-[#475467]">{c.risk}</div>
@@ -151,9 +139,6 @@ export default function ClientsPage() {
                         onClick={() => openActionsDrawer(c)}
                       >
                         <MessageSquare className="h-4 w-4" />
-                        {c.unread && (
-                          <span className="absolute right-1 top-1 inline-block h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
-                        )}
                       </button>
                     </div>
                   </li>
@@ -165,7 +150,7 @@ export default function ClientsPage() {
           <ClientDrawer
             open={drawerOpen}
             onOpenChange={setDrawerOpen}
-            client={activeClient as any}
+            client={activeClient ? toDrawerClient(activeClient) : null}
           />
         </main>
       </div>
@@ -182,8 +167,64 @@ function FilterButton({ label }: { label: string }) {
   )
 }
 
-function progressPct(c: ClientRow) {
-  const elapsed = Math.max(c.totalDays - c.daysLeft, 0)
-  const pct = (elapsed / c.totalDays) * 100
+function parseDate(s?: string | null): Date | null {
+  if (!s) return null
+  const d = new Date(s)
+  return isNaN(d.getTime()) ? null : d
+}
+
+function diffDays(a: Date, b: Date): number {
+  const msPerDay = 1000 * 60 * 60 * 24
+  // Floor difference to avoid partial day inflation
+  return Math.floor((b.getTime() - a.getTime()) / msPerDay)
+}
+
+function totalDays(c: ClientType): number {
+  const start = parseDate(c.start_date)
+  const end = parseDate(c.end_date)
+  if (start && end) {
+    const total = diffDays(start, end)
+    return Math.max(1, total)
+  }
+  // Fallback duration if end not available
+  return 30
+}
+
+function daysLeft(c: ClientType): number {
+  const today = new Date()
+  const end = parseDate(c.end_date)
+  if (end) {
+    return Math.max(0, diffDays(today, end))
+  }
+  // If end date is missing, assume full period left
+  return totalDays(c)
+}
+
+function displayName(c: ClientType): string {
+  const parts = [c.first_name?.trim(), c.last_name?.trim()].filter(Boolean)
+  const name = parts.join(" ").trim()
+  return name || c.profile || c.email || c.phone_number || String(c.id)
+}
+
+function progressPct(c: ClientType) {
+  const total = totalDays(c)
+  const elapsed = Math.max(total - daysLeft(c), 0)
+  const pct = (elapsed / total) * 100
   return Math.max(2, Math.min(100, pct))
+}
+
+function toDrawerClient(c: ClientType): DrawerClient {
+  const plan = (c.plan === "Elite" || c.plan === "Lite") ? (c.plan as any) : "Elite"
+  const risk = (c.risk === "Aggressive" || c.risk === "Conservative" || c.risk === "Moderate") ? (c.risk as any) : undefined
+  return {
+    id: String(c.id),
+    name: displayName(c),
+    plan,
+    daysLeft: daysLeft(c),
+    totalDays: totalDays(c),
+    risk,
+    phone: c.phone_number,
+    email: c.email,
+    rm: c.assigned_rm?.email, 
+  }
 }
