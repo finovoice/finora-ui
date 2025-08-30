@@ -124,7 +124,6 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
         type: 'success',
         duration: 3000
       })
-      onOpenChange(false)
     } catch (e) {
       console.error("An error occurred during API calls: ", e)
       showToast({
@@ -134,6 +133,7 @@ export default function CreateTradeDialog({ open, onOpenChange, initialSymbol }:
         duration: 3000
       })
     } finally {
+      onOpenChange(false)
       setSending(false)
     }
   }

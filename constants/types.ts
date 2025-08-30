@@ -65,30 +65,81 @@ export type CohortType = {
 
 
 export type ClientType = {
-    id: number
-    phone_number: string
+  id: string
+  phone_number: string
+  email: string
+  pancard: string
+  organisation: number
+  assigned_rm: {
+    id: string
     email: string
-    pancard: string
-    organisation: number
-    assigned_rm: {
-      id: number
-      email: string
-      phone_number: string
-      type: string
-      is_admin: boolean
-      is_org_admin: boolean
-    }
-    profile: string
-    first_name: string
-    last_name: string
-    ekyc: string
-    risk: string
-    lead_stage: string
-    signed_contract_url: string | null
-    plan: string
-    start_date: string
-    end_date: string | null
-    is_converted_to_client: boolean
-    created_at: string
-    updated_at: string
+    phone_number: string
+    type: string
+    is_admin: boolean
+    is_org_admin: boolean
+  }
+  profile: string
+  first_name: string
+  last_name: string
+  ekyc: string
+  risk: string
+  notes?: string
+  lead_stage: LeadStage
+  signed_contract_url: string | null
+  plan: string
+  start_date: string
+  end_date: string | null
+  is_converted_to_client: boolean
+  created_at: string
+  updated_at: string
 }
+
+export type EditableClient = {
+  first_name?: string
+  last_name?: string
+  email?: string
+  phone_number?: string
+  assigned_rm?: string
+  pancard?: string
+  organisation?: number
+  profile?: string
+  notes?: string
+  ekyc?: string
+  risk?: string
+  lead_stage?: LeadStage
+  signed_contract_url?: string | null
+  plan?: string
+  start_date?: string
+  end_date?: string | null
+  is_converted_to_client?: boolean
+}
+
+export type LeadType = {
+  phone_number: string,
+  email: string,
+  organisation: number,
+  first_name: string,
+  last_name: string,
+  assigned_rm: string,
+}
+
+
+export type SubscriptionType = {
+  id?: string;
+  plan: string;
+  client: string;
+  created_by: string;
+  is_active?: boolean;
+  start_date?: string; // or Date if you're parsing
+  end_date: string;
+  amount_paid: string;
+  payment_reference?: string | null;
+  auto_renew?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  client_email: string;
+  plan_name: string;
+  plan_type?: "ELITE" | "STANDARD" | "PREMIUM"; // adjust as needed
+};
+
+export type LeadStage = "LEAD" | "CONTACTED" | "DOCUMENTED" | "AWAITING_PAYMENT";
