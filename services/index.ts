@@ -37,7 +37,7 @@ export const sendGetRequest = async (url: string, object = "resource") => {
 }
 
 export const startServerAPI = async () => {
-    const url = `${BACKEND_URL}/health`;
+    const url = `${BACKEND_URL}/health/`;
     const response = await fetch(url);
     try {
         if (response.status >= 400) {
