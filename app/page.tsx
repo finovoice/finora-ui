@@ -4,6 +4,8 @@ import { useMemo, useState } from "react"
 import Sidebar from "@/components/sidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import "react-datepicker/dist/react-datepicker.css";
+
 import { CalendarDays } from "lucide-react"
 import {
     ResponsiveContainer,
@@ -117,9 +119,8 @@ export default function DashboardPage() {
                                     <Button
                                         key={g}
                                         variant={g === granularity ? undefined : "outline"}
-                                        className={`h-8 px-3 text-sm ${
-                                            g === granularity ? "bg-[#7f56d9] text-white hover:bg-[#6e46c4]" : "border-[#e4e7ec] bg-white"
-                                        }`}
+                                        className={`h-8 px-3 text-sm ${g === granularity ? "bg-[#7f56d9] text-white hover:bg-[#6e46c4]" : "border-[#e4e7ec] bg-white"
+                                            }`}
                                         onClick={() => setGranularity(g)}
                                     >
                                         {g}
@@ -132,9 +133,8 @@ export default function DashboardPage() {
                                     <Button
                                         key={p}
                                         variant={p === period ? undefined : "outline"}
-                                        className={`h-8 px-3 text-sm ${
-                                            p === period ? "bg-[#7f56d9] text-white hover:bg-[#6e46c4]" : "border-[#e4e7ec] bg-white"
-                                        }`}
+                                        className={`h-8 px-3 text-sm ${p === period ? "bg-[#7f56d9] text-white hover:bg-[#6e46c4]" : "border-[#e4e7ec] bg-white"
+                                            }`}
                                         onClick={() => setPeriod(p)}
                                     >
                                         {p} {granularity === "Daily" ? "days" : granularity === "Weekly" ? "weeks" : "months"}

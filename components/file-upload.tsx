@@ -31,7 +31,6 @@ export default function FileUpload({
   fileSize = "200 KB",
   onFileSelect,
   onFileDelete,
-  placeholder = "Click to upload or drag and drop",
   showPreview = true
 }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -89,37 +88,30 @@ export default function FileUpload({
 
   return (
     <div className="space-y-2">
-      <Label>
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
+
 
       {/* File upload area - shown when no file is selected */}
       {!value && (
-        <div 
-          className={`rounded-lg border transition-colors cursor-pointer ${
-            isDragOver 
-              ? 'border-[#6941c6] bg-[#f9f5ff]' 
-              : 'border-[#e4e7ec] bg-[#fcfcfd]'
-          }`}
+        <div
+          className={`rounded-lg border transition-colors cursor-pointer ${isDragOver
+            ? 'border-[#6941c6] bg-[#f9f5ff]'
+            : 'border-[#e4e7ec] bg-[#fcfcfd]'
+            }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={handleClick}
         >
-          <div className="flex items-center justify-center text-center px-6 py-8 text-sm">
+          <div className="flex items-center justify-center text-center px-6 py-6 text-sm">
             <div className="flex flex-col items-center gap-2">
               <div className="h-9 w-9 rounded-full bg-[#f2f4f7] flex items-center justify-center">
                 <UploadCloud className="h-5 w-5 text-[#98a2b3]" />
               </div>
               <div>
-                <span className="text-[#6941c6]">Click to upload</span>
-                <span className="text-[#98a2b3]"> or drag and drop</span>
+                <span className="text-[#6941c6]">Upload</span>
+                <span className="text-[#98a2b3]"> or drag and drop drafted contract (PDF not greater than 20 MB)</span>
               </div>
-              <div className="text-[#98a2b3]">
-                {accept.includes('image') ? 'SVG, PNG or JPG' : 'Select file'} 
-                {dimensions && ` (${dimensions})`}
-                {maxSize && ` max. ${maxSize}`}
-              </div>
+
             </div>
           </div>
         </div>
@@ -130,9 +122,9 @@ export default function FileUpload({
         <div className="rounded-lg border border-[#e4e7ec] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {showImagePreview ? (
-              <img 
-                src={value} 
-                alt="Preview" 
+              <img
+                src={value}
+                alt="Preview"
                 className="h-9 w-9 rounded-md object-cover"
               />
             ) : (
