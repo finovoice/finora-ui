@@ -30,3 +30,4 @@ export const createCohortAPI = async (cohort: CohortType): Promise<CohortType> =
   const requestOptions = await getRequestOptions(cohort, "POST")
   return await sendUpdateCreateRequest(COHORT_API_SERVICE_URL, requestOptions, "cohort") as CohortType
 }
+
