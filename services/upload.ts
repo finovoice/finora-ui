@@ -27,9 +27,12 @@ export interface SignedUrlResponse {
  * - file: binary file
  * - purpose: string (e.g., "invoice")
  */
+import { AxiosProgressEvent } from "axios";
+
 export const uploadFileAPI = async (
   file: File | Blob,
-  purpose: string
+  purpose: string,
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
 ): Promise<UploadResponse> => {
   const formData = new FormData()
   formData.append("file", file)
@@ -41,6 +44,7 @@ export const uploadFileAPI = async (
     data: formData,
     redirect: "Follow",
     headers: {},
+    onUploadProgress, // Pass the progress callback to Axios
   }
 
   return await sendUpdateCreateRequest(
@@ -63,4 +67,3 @@ export const createSignedUrlAPI = async (key: string): Promise<SignedUrlResponse
     "signed-url"
   )
 }
-

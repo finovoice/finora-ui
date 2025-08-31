@@ -5,7 +5,7 @@ import { DialogHeader } from "./ui/dialog"
 import { TradeType } from "@/constants/types"
 import { cn } from "@/lib/utils"
 import { ChevronDown, ChevronUp, Hourglass, Pencil, Send } from "lucide-react"
-import { useState } from "react"
+import { useState, useMemo } from "react" // Added useMemo
 import { AuditTrail } from "@/constants/types"
 
 type TimelineProps = {
@@ -43,6 +43,41 @@ export default function TimelineDisplay(
     const toggleAuditTrail = (id: string) => {
         setExpandedAuditTrail(expandedAuditTrail === id ? null : id);
     };
+
+    const timelineEvents = useMemo(() => {
+        if (!trade) return [];
+
+        const events: {
+            id: string;
+            type: "Created" | "Edited";
+            timestamp: string;
+            audit?: AuditTrail;
+        }[] = [];
+
+        // Add the initial trade creation event
+        events.push({
+            id: `trade-created-${trade.created_at}`,
+            type: "Created",
+            timestamp: trade.created_at,
+        });
+
+        // Add audit trail events
+        if (trade.audit_trails) {
+            trade.audit_trails.forEach((audit, index) => {
+                events.push({
+                    id: `audit-${audit.updated_at}-${index}`, // Ensure unique ID
+                    type: getAuditType(audit),
+                    timestamp: audit.updated_at,
+                    audit: audit,
+                });
+            });
+        }
+
+        // Sort events chronologically (oldest first)
+        events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+        return events;
+    }, [trade]); // Recalculate when trade changes
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,38 +117,42 @@ export default function TimelineDisplay(
                 )}
 
                 <div className="flex-1 overflow-y-auto p-6">
-                    {trade && trade.audit_trails && [...trade.audit_trails].reverse().map((audit: AuditTrail, index: number) => {
-                        const auditType = getAuditType(audit);
-                        const changes = getChanges(audit);
-                        const timestamp = new Date(audit.updated_at).toLocaleString();
+                    {timelineEvents.slice().reverse().map((event, index: number) => { // Reverse the array for display
+                        const isInitialCreation = event.type === "Created" && !event.audit; // Differentiate initial creation from audit trail 'Created'
+                        const displayType = isInitialCreation ? "Created" : event.type;
+                        const changes = event.audit ? getChanges(event.audit) : [];
+                        const timestamp = new Date(event.timestamp).toLocaleString();
+
+                        // Calculate the actual index for the line connector based on the original sorted array
+                        const originalIndex = timelineEvents.length - 1 - index;
 
                         return (
-                            <div key={index} className="flex gap-2 mb-4">
+                            <div key={event.id} className="flex gap-2 mb-4">
                                 <div className="flex flex-col items-center mt-1">
-                                    {auditType === "Edited" ? (
+                                    {displayType === "Edited" ? (
                                         <Pencil className="h-4 w-4 text-[#98a2b3]" />
                                     ) : (
                                         <Send className="h-4 w-4 text-[#98a2b3]" />
                                     )}
-                                    {index < trade.audit_trails.length - 1 && (
+                                    {originalIndex > 0 && ( // Connectors for all but the very first (oldest) event
                                         <div className="w-px bg-[#e4e7ec] flex-1 mt-1 -mb-3"></div>
                                     )}
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-semibold text-gray-600">{auditType}</span>
+                                        <span className="text-sm font-semibold text-gray-600">{displayType}</span>
                                         {changes.length > 0 && (
                                             <button
                                                 className="rounded-md  hover:bg-[#f2f4f7]"
-                                                onClick={() => toggleAuditTrail(`${audit.updated_at}-${index}`)}
-                                                aria-expanded={expandedAuditTrail === `${audit.updated_at}-${index}`}
-                                                aria-label={expandedAuditTrail === `${audit.updated_at}-${index}` ? "Collapse details" : "Expand details"}
+                                                onClick={() => toggleAuditTrail(event.id)}
+                                                aria-expanded={expandedAuditTrail === event.id}
+                                                aria-label={expandedAuditTrail === event.id ? "Collapse details" : "Expand details"}
                                             >
-                                                {expandedAuditTrail === `${audit.updated_at}-${index}` ? <ChevronUp className="h-4 w-4 text-[#98a2b3]" /> : <ChevronDown className="h-4 w-4 text-[#98a2b3]" />}
+                                                {expandedAuditTrail === event.id ? <ChevronUp className="h-4 w-4 text-[#98a2b3]" /> : <ChevronDown className="h-4 w-4 text-[#98a2b3]" />}
                                             </button>
                                         )}
                                     </div>
-                                    {changes.length > 0 && expandedAuditTrail === `${audit.updated_at}-${index}` && (
+                                    {changes.length > 0 && expandedAuditTrail === event.id && (
                                         <div className="mt-2 px-3 py-2 bg-[#f9fafb] border border-[#eaecf0] rounded-lg text-sm text-[#475467]">
                                             {changes.map((change, changeIndex) => (
                                                 <div key={changeIndex} className="mb-2 last:mb-0">

@@ -12,7 +12,3 @@ export const postSubscriptionAPI = async (sub: SubscriptionType): Promise<Subscr
     const requestOptions = await getRequestOptions(sub, "POST")
     return await sendUpdateCreateRequest(SUBSCRIPTION_API_SERVICE_URL, requestOptions, "subscriptions") as SubscriptionType
 }
-
-
-
-

@@ -8,6 +8,7 @@ interface ToastOptions {
     description?: string;
     type?: ToastType;
     duration?: number;
+    progress?: number; // Added for upload progress
 }
 
 let triggerToast: (options: ToastOptions) => void = () => { };
@@ -96,6 +97,14 @@ export const ToastManager = () => {
                         <Toast.Description className="text-gray-600 text-sm leading-5 mt-1">
                             {options.description}
                         </Toast.Description>
+                    )}
+                    {options.progress !== undefined && options.progress >= 0 && options.progress <= 100 && (
+                        <div className="mt-2 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-green-500 transition-all duration-100 ease-out"
+                                style={{ width: `${options.progress}%` }}
+                            ></div>
+                        </div>
                     )}
                 </div>
                 <Toast.Close asChild>

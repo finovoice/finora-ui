@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react"
 import { Card } from "@/components/ui/card"
-import { ChevronDown, ChevronUp, Clock3, Edit3, EllipsisVertical, Flag, LogOut, Share2 } from "lucide-react"
+import { ChevronDown, ChevronUp, Clock3, Edit3, EllipsisVertical, File, FileArchive, FileBadge, Flag, LogOut, Share2 } from "lucide-react"
 import type { TradeType } from "@/constants/types"
+import Rationale from "@/components/ui/rationale" // Import Rationale component
 
 type Props = {
   trade: TradeType;
@@ -15,6 +16,7 @@ type Props = {
 
 export default function TradeItem({ trade, onOpen, onEdit, onExit, onPreview }: Props) {
   const [open, setOpen] = useState<boolean>(false)
+  const [showRationaleDialog, setShowRationaleDialog] = useState<boolean>(false) // State for Rationale dialog
 
   const side = trade.order
   const symbol = trade.stock_name
@@ -24,6 +26,21 @@ export default function TradeItem({ trade, onOpen, onEdit, onExit, onPreview }: 
   const stoploss = trade.stoploss ?? undefined
   const targets = Array.isArray(trade.targets) ? trade.targets.join(" » ") : undefined
   const time = useMemo(() => new Date(trade.created_at).toLocaleString(), [trade.created_at])
+
+  const handleSetRationaleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowRationaleDialog(true)
+  }
+
+  const handleRationaleClose = () => {
+    setShowRationaleDialog(false)
+  }
+
+  const handleRationaleSave = (content: { text?: string; file?: File }) => {
+    console.log("Rationale saved:", content)
+    // Here you would typically send the rationale to a backend service
+    // For now, we'll just log it.
+  }
 
   return (
     <Card className="w-full border-[#e4e7ec] bg-white">
@@ -52,6 +69,13 @@ export default function TradeItem({ trade, onOpen, onEdit, onExit, onPreview }: 
         <div className="ml-auto flex items-center gap-1 text-[#667085]">
           {!open && (
             <>
+              <button
+                className="flex flex-row gap-1 items-center text-orange-500 hover:text-orange-700 rounded-md p-2 hover:bg-[#f2f4f7]"
+                onClick={handleSetRationaleClick}
+              >
+                <FileBadge size={12} />
+                <span className="font-medium text-sm">Set Rationale</span>
+              </button>
               <button
                 className="rounded-md p-2 hover:bg-[#f2f4f7]"
                 aria-label="Exit">
@@ -129,6 +153,12 @@ export default function TradeItem({ trade, onOpen, onEdit, onExit, onPreview }: 
           </div>
         </div>
       )}
+
+      <Rationale
+        isOpen={showRationaleDialog}
+        onClose={handleRationaleClose}
+        onSave={handleRationaleSave}
+      />
     </Card>
   )
 }
