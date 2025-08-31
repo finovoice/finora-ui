@@ -10,14 +10,10 @@ import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Switch } from "../ui/switch";
 import { showToast } from '../ui/toast-manager';
-import { importLeadAPI, bulkCreateLeadsAPI } from "@/services/clients"; // Import bulkCreateLeadsAPI
+import { importLeadAPI, bulkCreateLeadsAPI } from "@/services/clients";
 import { LeadType } from "@/constants/types";
-import { uploadFileAPI } from "@/services/upload"; // Import uploadFileAPI
-import { AxiosProgressEvent } from "axios"; // Import AxiosProgressEvent
-import Papa from 'papaparse'; // Import PapaParse
-import { downloadCSV } from '@/lib/utils'; // Import downloadCSV utility
-import { importLeadAPI } from "@/services/clients";
-import { LeadType } from "@/constants/types";
+import Papa from 'papaparse';
+import { downloadCSV } from '@/lib/utils';
 
 type Props = {
     open: boolean,
@@ -415,31 +411,6 @@ export default function AddLead({ open, setOpen }: Props) {
                         </Button>
                     </TabsContent>
                 </Tabs>
-                    </TabsContent>
-                    <TabsContent value="bulk" className="p-5 pb-58">
-                        <p className="text-sm text-[#667085]">Bulk upload functionality will be implemented later.</p>
-                    </TabsContent>
-                </Tabs>
-
-                <div className="border-t border-[#e4e7ec] px-6 pb-4  flex flex-col gap-4 items-center justify-between">
-                    <Button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={sending}
-                        className="h-10 w-full px-4 py-2 justify-center gap-2 rounded-lg bg-[#7f56d9] text-white hover:bg-[#6941c6]"
-                    >
-                        <span>{sending ? 'Adding...' : 'Add'}</span>
-                    </Button>
-                    <div className="flex items-center space-x-2">
-                        <Switch
-                            id="add-continuously"
-                            checked={addContinuously}
-                            onCheckedChange={setAddContinuously}
-                            className="data-[state=checked]:bg-[#7f56d9]"
-                        />
-                        <Label htmlFor="add-continuously" className={`text-sm ${addContinuously ? 'text-[#475467]' : 'text-gray-400'} `}>Add continuously</Label>
-                    </div>
-                </div>
             </DialogContent>
         </Dialog>
     );

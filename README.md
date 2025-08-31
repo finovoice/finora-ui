@@ -37,6 +37,12 @@ To run this project locally, follow these steps:
 2. Start the development server with `yarn run dev`.
 3. Open your browser and navigate to `http://localhost:3000` to view the app.
 
+### Node version and engines
+This project depends on react-pdf, which in turn uses pdfjs-dist with strict Node engine requirements in recent versions. To ensure installs work even on older Node 20.x (e.g., v20.0.0), the repository includes a `.yarnrc` with `ignore-engines true` for Yarn v1. If you are using Yarn v1 (1.22.x), this will bypass engine checks during `yarn install`.
+
+- Recommended: use Node >= 20.16.0 or >= 22.3.0 for full compatibility.
+- If you prefer enforcing engines, remove the `.yarnrc` setting and upgrade your Node version accordingly.
+
 ### .env
 Create a `.env` file in the root directory of your project and add the following environment variables:
 
