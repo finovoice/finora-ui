@@ -15,6 +15,7 @@ import { ClientType, LeadStage } from "@/constants/types"
 import EditLead from "@/components/sales/edit-lead"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command"
+import LoadingSpinner from "@/components/ui/loading-spinner"
 
 
 export default function SalesPage() {
@@ -31,33 +32,39 @@ export default function SalesPage() {
   const [selectedLeadQuality, setSelectedLeadQuality] = useState<("HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND")[]>([])
   const [searchQuery, setSearchQuery] = useState<string>("")
 
+  const refreshClients = async () => {
+    setLoading(true);
+    try {
+      await startServerAPI();
+      const data = await getClientsAPI("?is_converted_to_client=false");
+      setClientList(data);
+      const newlead = data.find(c => c.id == activeLead?.id)
+      if (newlead) {
+        setClient(newlead)
+      }
+
+    } catch (e: any) {
+      console.error("Error fetching sales:", e);
+      showToast({
+        title: "Error",
+        description: `Error: Failed to load Sales`,
+        type: 'error',
+        duration: 3000
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true
-    const run = async () => {
-      try {
-        await startServerAPI()
-        const data = await getClientsAPI()
-        setClientList(data)
-        if (!mounted) return
-      } catch (e: any) {
-        if (!mounted) return
-        console.error("Error fetching sales:", e)
-        showToast({
-          title: "Error",
-          description: `Error: Failed to load Sales`,
-          type: 'error',
-          duration: 3000
-        })
-      } finally {
-        if (mounted) setLoading(false)
-      }
+    let mounted = true;
+    if (mounted) {
+      refreshClients();
     }
-    run()
     return () => {
-      mounted = false
-    }
-  }, [])
+      mounted = false;
+    };
+  }, []);
 
   // Generate filter options
   const planOptions: ('STANDARD' | "PREMIUM" | 'ELITE')[] = ['STANDARD', 'PREMIUM', 'ELITE']
@@ -228,15 +235,21 @@ export default function SalesPage() {
                         </h2>
                         <ChevronDown className="h-4 w-4 text-[#98a2b3]" />
                       </div>
-                      <span className="ml-2 inline-grid  h-5 min-w-5 place-items-center rounded-full bg-[#f2f4f7] px-1 text-xs text-[#475467]">
-                        {col.leads.length}
-                      </span>
+                      {loading ? (
+                        <span className="ml-2 inline-grid h-5 min-w-5 bg-white place-items-center rounded-full bg-[#f2f4f7] px-1 text-xs text-[#475467]">
+                          <LoadingSpinner />
+                        </span>
+                      ) : (
+                        <span className="ml-2 inline-grid h-5 min-w-5 place-items-center rounded-full bg-[#f2f4f7] px-1 text-xs text-[#475467]">
+                          {col.leads.length}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-3 border-t border-[#f2f4f7] p-3">
                     {col.leads.map((lead) => (
                       <button
-                        key={lead.name}
+                        key={lead.id}
                         onClick={() => openDrawer({
                           id: lead.id,
                           name: lead.name,
@@ -258,10 +271,11 @@ export default function SalesPage() {
       </div>
 
       {/* Right-hand drawer */}
-      {client ? <LeadDrawer open={drawerOpen} onOpenChange={setDrawerOpen} lead={activeLead} client={client} /> : ''}
+      {client ? <LeadDrawer open={drawerOpen} onOpenChange={setDrawerOpen} lead={activeLead} client={client} refreshClients={refreshClients} /> : ''}
       <AddLead
         open={addLead}
         setOpen={setAddLead}
+        refreshClients={refreshClients}
       />
       <ToastManager />
     </div>

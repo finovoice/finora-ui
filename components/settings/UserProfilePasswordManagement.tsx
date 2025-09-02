@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { adminPasswordReset } from '@/services/admin';
 
 export function UserProfilePasswordManagement() {
     const [currentPassword, setCurrentPassword] = useState('');
@@ -36,8 +35,7 @@ export function UserProfilePasswordManagement() {
                 "new_password2": "Admin@1234"
             }
             try {
-                const response = await adminPasswordReset(passwordUpdate)
-                console.log(response)
+                // const response = await adminPasswordReset(passwordUpdate)
             } catch (e) {
                 console.error(e)
             }

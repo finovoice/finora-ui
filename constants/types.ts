@@ -70,6 +70,7 @@ export type ClientType = {
   email: string
   pancard: string
   organisation: number
+  dob?: string
   assigned_rm: {
     id: string
     email: string
@@ -101,6 +102,7 @@ export type EditableClient = {
   phone_number?: string
   assigned_rm?: string
   pancard?: string
+  dob?: string
   organisation?: number
   profile?: string
   notes?: string

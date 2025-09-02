@@ -5,8 +5,8 @@ import { ClientType, EditableClient, LeadType } from "@/constants/types";
 const CLIENT_API_SERVICE_URL = `${BACKEND_URL}/api/core/clients/`
 const BULK_CREATE_LEADS_API_SERVICE_URL = `${BACKEND_URL}/api/core/clients/bulk-create/`
 
-export const getClientsAPI = async (): Promise<ClientType[]> => {
-  return await sendGetRequest(CLIENT_API_SERVICE_URL, "clients")
+export const getClientsAPI = async (query: string = ''): Promise<ClientType[]> => {
+  return await sendGetRequest(CLIENT_API_SERVICE_URL + query, "clients")
 }
 
 export const importLeadAPI = async (lead: LeadType): Promise<ClientType> => {

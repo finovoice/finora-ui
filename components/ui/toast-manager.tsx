@@ -1,5 +1,5 @@
 import * as Toast from '@radix-ui/react-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -11,40 +11,44 @@ interface ToastOptions {
     progress?: number; // Added for upload progress
 }
 
+interface ToastItem extends ToastOptions {
+    id: string;
+    open: boolean;
+}
+
 let triggerToast: (options: ToastOptions) => void = () => { };
 
 export const ToastManager = () => {
-    const [open, setOpen] = useState(false);
-    const [options, setOptions] = useState<ToastOptions>({
-        title: '',
-        description: '',
-        type: 'info',
-        duration: 3000,
-    });
+    const [toasts, setToasts] = useState<ToastItem[]>([]);
+    const toastIdRef = useRef(0);
 
     useEffect(() => {
         triggerToast = (opts) => {
-            setOptions({
-                ...opts,
-                type: opts.type ?? 'info',
-                duration: opts.duration ?? 3000,
-            });
-            setOpen(true);
+            const id = String(toastIdRef.current++);
+            setToasts((prevToasts) => [
+                ...prevToasts,
+                {
+                    id,
+                    open: true,
+                    ...opts,
+                    type: opts.type ?? 'info',
+                    duration: opts.duration ?? 3000,
+                },
+            ]);
         };
     }, []);
-    const iconContainerClasses = {
-        success: 'bg-green-100',
-        error: 'bg-red-100',
-        warning: 'bg-yellow-100',
-        info: 'bg-blue-100',
-    }[options.type || 'info'];
 
-    const iconClasses = {
-        success: 'text-green-600',
-        error: 'text-red-600',
-        warning: 'text-yellow-600',
-        info: 'text-blue-600',
-    }[options.type || 'info'];
+    const handleOpenChange = (id: string, open: boolean) => {
+        setToasts((prevToasts) =>
+            prevToasts.map((toast) => (toast.id === id ? { ...toast, open } : toast))
+        );
+        // Remove toast from the DOM after it has closed
+        if (!open) {
+            setTimeout(() => {
+                setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+            }, 200); // Match the data-[state=closed] duration
+        }
+    };
 
     const getIconSvgPath = (type: ToastType | undefined) => {
         switch (type) {
@@ -62,72 +66,91 @@ export const ToastManager = () => {
 
     return (
         <Toast.Provider swipeDirection="right">
-            <Toast.Root
-                className={`flex items-center gap-4 min-w-80 max-w-md bg-white border border-gray-200 rounded-lg shadow-lg p-4 outline-none focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2
-                    data-[state=open]:animate-in data-[state=open]:slide-in-from-right-full data-[state=open]:duration-300
-                    data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right-full data-[state=closed]:duration-200
-                `}
-                open={open}
-                onOpenChange={setOpen}
-                duration={options.duration}
-            >
-                <div className="flex-shrink-0">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${iconContainerClasses}`}>
-                        <svg
-                            className={`w-4 h-4 ${iconClasses}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d={getIconSvgPath(options.type)}
-                            />
-                        </svg>
-                    </div>
-                </div>
+            {toasts.map((toast) => {
+                const iconContainerClasses = {
+                    success: 'bg-green-100',
+                    error: 'bg-red-100',
+                    warning: 'bg-yellow-100',
+                    info: 'bg-blue-100',
+                }[toast.type || 'info'];
 
-                <div className="flex-1 min-w-0">
-                    <Toast.Title className="block font-semibold text-gray-900 text-sm leading-5">
-                        {options.title}
-                    </Toast.Title>
-                    {options.description && (
-                        <Toast.Description className="text-gray-600 text-sm leading-5 mt-1">
-                            {options.description}
-                        </Toast.Description>
-                    )}
-                    {options.progress !== undefined && options.progress >= 0 && options.progress <= 100 && (
-                        <div className="mt-2 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-green-500 transition-all duration-100 ease-out"
-                                style={{ width: `${options.progress}%` }}
-                            ></div>
-                        </div>
-                    )}
-                </div>
-                <Toast.Close asChild>
-                    <button
-                        className="flex-shrink-0 w-8 h-8 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 pressed:bg-gray-200 transition-colors flex items-center justify-center outline-none focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2"
-                        aria-label="Close toast"
+                const iconClasses = {
+                    success: 'text-green-600',
+                    error: 'text-red-600',
+                    warning: 'text-yellow-600',
+                    info: 'text-blue-600',
+                }[toast.type || 'info'];
+
+                return (
+                    <Toast.Root
+                        key={toast.id}
+                        className={`flex items-center gap-4 min-w-80 max-w-md bg-white border border-gray-200 rounded-lg shadow-lg p-4 outline-none focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2
+                            data-[state=open]:animate-in data-[state=open]:slide-in-from-right-full data-[state=open]:duration-300
+                            data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right-full data-[state=closed]:duration-200
+                        `}
+                        open={toast.open}
+                        onOpenChange={(open) => handleOpenChange(toast.id, open)}
+                        duration={toast.duration}
                     >
-                        <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
-                </Toast.Close>
-            </Toast.Root>
+                        <div className="flex-shrink-0">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${iconContainerClasses}`}>
+                                <svg
+                                    className={`w-4 h-4 ${iconClasses}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d={getIconSvgPath(toast.type)}
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                            <Toast.Title className="block font-semibold text-gray-900 text-sm leading-5">
+                                {toast.title}
+                            </Toast.Title>
+                            {toast.description && (
+                                <Toast.Description className="text-gray-600 text-sm leading-5 mt-1">
+                                    {toast.description}
+                                </Toast.Description>
+                            )}
+                            {toast.progress !== undefined && toast.progress >= 0 && toast.progress <= 100 && (
+                                <div className="mt-2 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-green-500 transition-all duration-100 ease-out"
+                                        style={{ width: `${toast.progress}%` }}
+                                    ></div>
+                                </div>
+                            )}
+                        </div>
+                        <Toast.Close asChild>
+                            <button
+                                className="flex-shrink-0 w-8 h-8 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 pressed:bg-gray-200 transition-colors flex items-center justify-center outline-none focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2"
+                                aria-label="Close toast"
+                            >
+                                <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </Toast.Close>
+                    </Toast.Root>
+                );
+            })}
 
             <Toast.Viewport className="fixed bottom-4 right-4 flex flex-col-reverse gap-2 z-[999]" />
         </Toast.Provider>

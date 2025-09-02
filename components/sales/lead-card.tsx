@@ -1,4 +1,5 @@
 import { CalendarDays, Flame, ShieldCheck, UserRound, RefreshCw, MessageSquare, ShoppingBag } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 export type LeadCardProps = {
   name: string
@@ -9,10 +10,35 @@ export type LeadCardProps = {
 }
 
 export default function LeadCard({ name, date, owner, hot = false, tier }: LeadCardProps) {
+  const textRef = useRef<HTMLHeadingElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (el) {
+      const isOverflowing = el.scrollHeight > el.clientHeight;
+      setIsTruncated(isOverflowing);
+    }
+  }, [name]);
+
   return (
     <div className="rounded-lg border border-[#e4e7ec] bg-white p-3 hover:shadow-sm transition-shadow">
       <div className="flex items-center justify-between">
-        <h4 className="text-[15px] font-medium text-[#1f2937]">{name}</h4>
+        <div className="relative group w-fit">
+          <h4
+            ref={textRef}
+            className="text-[15px] font-medium text-[#1f2937] line-clamp-2"
+          >
+            {name}
+          </h4>
+
+          {isTruncated && (
+            <div className="absolute top-full mt-1 left-0 z-10 hidden group-hover:block bg-white text-gray-700 text-sm px-3 py-2 rounded shadow-lg max-w-sm w-max whitespace-normal border border-gray-200">
+              {name}
+            </div>
+          )}
+        </div>
+
       </div>
 
       <div className="mt-2 flex items-center justify-between border-t border-[#f2f4f7] pt-2 text-xs text-[#667085]">

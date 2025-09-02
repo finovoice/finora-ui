@@ -25,7 +25,7 @@ import { showToast } from "../ui/toast-manager"
 import { ClientType, EditableClient, LeadStage, SubscriptionType } from "@/constants/types"
 import { editLeadAPI } from "@/services/clients"
 import { title } from "process"
-import { postSubscriptionAPI } from "@/services/subscription"
+import { createSubscriptionAPI } from "@/services/subscription"
 
 
 
@@ -41,12 +41,14 @@ export default function LeadDrawer({
   open,
   onOpenChange,
   lead,
-  client
+  client,
+  refreshClients
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   lead?: Lead | null,
-  client: ClientType
+  client: ClientType,
+  refreshClients: () => void
 }) {
   const [tab, setTab] = useState("details")
   const [stage, setStage] = useState<LeadStage>(client?.lead_stage ?? "LEAD")
@@ -85,7 +87,7 @@ export default function LeadDrawer({
     setAmount("")
     setText(client.notes ?? '')
     setRenewal("Monthly")
-  }, [lead?.id, open])
+  }, [lead?.id, open, client])
 
   // If user sets stage to documenting, auto-focus the Onboard tab
   useEffect(() => {
@@ -93,6 +95,43 @@ export default function LeadDrawer({
       setTab("onboard")
     }
   }, [stage])
+
+
+  const isValidDate = (dateStr: string): boolean => {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateStr)) return false;
+
+    const [yearStr, monthStr, dayStr] = dateStr.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
+
+    if ((year < 1925 || year > 2007)) return false;
+
+    if (month < 1 || month > 12) return false;
+
+    const isValidDay = (d: number, m: number, y: number): boolean => {
+      const daysInMonth = new Date(y, m, 0).getDate();
+      return d >= 1 && d <= daysInMonth;
+    };
+    return isValidDay(day, month, year);
+  };
+
+  function isValidPositiveInteger(value: string): boolean {
+    return /^[1-9]\d*$/.test(value.trim());
+  }
+
+  const getNextRenewalDate = (): string => {
+    const now = new Date();
+    if (renewal === "Weekly") now.setDate(now.getDate() + 7);
+    else now.setMonth(now.getMonth() + (renewal === "Monthly" ? 1 : 3));
+    return now.toISOString().split("T")[0];
+  };
+
+  const isValidPAN = (pan: string): boolean => {
+    const pattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+    return pattern.test(pan.trim().toUpperCase());
+  }
 
   async function handleEditClientSubmit() {
     if (!lead?.id) {
@@ -120,6 +159,7 @@ export default function LeadDrawer({
         description: "Lead successfully edited",
         type: 'success'
       })
+      refreshClients();
     } catch (e) {
       showToast({
         title: 'Error',
@@ -168,7 +208,18 @@ export default function LeadDrawer({
         type: "warning",
       })
       return
+    } else {
+      const validPan = isValidPAN(pan);
+      if (!validPan) {
+        showToast({
+          title: "Incorrect PAN format",
+          description: "Please enter a valid PAN number.",
+          type: "warning",
+        })
+        return
+      }
     }
+
 
     if (!amount) {
       showToast({
@@ -177,6 +228,18 @@ export default function LeadDrawer({
         type: "warning",
       })
       return
+    }
+    else {
+      const validAmount = isValidPositiveInteger(amount)
+      if (!validAmount) {
+        showToast({
+          title: 'Warning',
+          description: 'Please enter correct amount format',
+          type: 'warning'
+        })
+        return
+      }
+
     }
 
     if (!plan) {
@@ -190,9 +253,17 @@ export default function LeadDrawer({
 
     if (!date) {
       showToast({
-        title: "Missing Start Date",
+        title: "Missing DOB",
         description: "Please select a start date for your investment.",
         type: "warning",
+      })
+      return
+    }
+    if (!isValidDate(date)) {
+      showToast({
+        title: "Error in DOB",
+        description: "Invalid date format or out-of-range values.",
+        type: "error",
       })
       return
     }
@@ -213,13 +284,12 @@ export default function LeadDrawer({
         signed_contract_url: upload.signed_url,
         pancard: pan,
         start_date: `${new Date().toISOString().split('T')[0]}T00:00:00Z`,
-        end_date: `${date}T00:00:00Z`,
         risk: riskProfile,
         plan: plan,
         is_converted_to_client: true,
         lead_stage: stage
       }
-      const updateClient = await editLeadAPI(editedClient, lead.id)
+      const updateClient = await editLeadAPI(editedClient, client.id)
       showToast({
         title: "Success",
         description: "Client has been updated",
@@ -229,18 +299,19 @@ export default function LeadDrawer({
       //subscription
       const subscription: SubscriptionType = {
         plan: '1',
-        client: lead.id,
+        client: client.id,
         created_by: client.assigned_rm.id,
         start_date: new Date().toISOString().split('T')[0],
-        end_date: date,
+        end_date: getNextRenewalDate(),
         amount_paid: amount,
         client_email: client.email,
         plan_name: plan + " " + renewal
       }
-      const subscriptionResponse = await postSubscriptionAPI(subscription)
+      console.log('subscriptiontype ', subscription)
+      const subscriptionResponse = await createSubscriptionAPI(subscription)
       showToast({
         title: "Success",
-        description: "Subscrption started",
+        description: "Subscription started",
         type: "success"
       })
     } catch (e) {
@@ -251,7 +322,9 @@ export default function LeadDrawer({
         type: "error"
       })
     } finally {
+      refreshClients();
       setSending(false)
+      onOpenChange(false)
     }
   }
 
@@ -275,8 +348,10 @@ export default function LeadDrawer({
         <div className="flex items-center justify-between border-b border-[#e4e7ec] px-5 py-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <SheetTitle className="truncate text-[18px] font-semibold text-[#101828]">
-                {lead?.name ?? "Liam Anderson"}
+              <SheetTitle className="truncate max-w-[220px] text-[18px] font-semibold text-[#101828]">
+                {(client?.first_name || client?.last_name)
+                  ? `${client?.first_name ?? ''} ${client?.last_name ?? ''}`.trim()
+                  : 'Lead Name'}
               </SheetTitle>
               <button onClick={() => setEditClient(true)} className="rounded p-1 text-[#667085] hover:bg-[#f2f4f7]" aria-label="Edit name">
                 <PencilLine className="h-4 w-4" />
@@ -285,11 +360,11 @@ export default function LeadDrawer({
             <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-[#475467]">
               <div className="inline-flex items-center gap-2">
                 <Phone className="h-4 w-4 text-[#98a2b3]" />
-                <span>{lead?.phone ?? "+91-9876543210"}</span>
+                <span>{client?.phone_number ?? "+91-1234567890"}</span>
               </div>
               <div className="inline-flex items-center gap-2">
                 <Mail className="h-4 w-4 text-[#98a2b3]" />
-                <span className="truncate">{lead?.email ?? "liam.anderson@email.com"}</span>
+                <span className="truncate">{client?.email ?? "liam.anderson@email.com"}</span>
               </div>
             </div>
           </div>
@@ -341,7 +416,7 @@ export default function LeadDrawer({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label className="text-sm text-[#344054]">Plan interested</Label>
                   <Select open={isPlanInterestedSelectOpen} onOpenChange={setIsPlanInterestedSelectOpen} value={plan} onValueChange={setPlan}>
                     <SelectTrigger className="h-10 w-full rounded-md border-[#e4e7ec]"><SelectValue placeholder="Select one" /></SelectTrigger>
@@ -351,7 +426,7 @@ export default function LeadDrawer({
                       <SelectItem value="ELITE">Elite</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
               </div>
 
               {/* Notepad */}
@@ -447,7 +522,7 @@ export default function LeadDrawer({
 
                   {/* Date */}
                   <div className="space-y-1.5">
-                    <Label className="text-sm text-[#344054]">Date <span className="text-red-500">*</span></Label>
+                    <Label className="text-sm text-[#344054]">DOB <span className="text-red-500">*</span></Label>
                     <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder="yyyy-mm-dd" className="h-10 rounded-md border-[#e4e7ec]" />
                   </div>
 
@@ -462,7 +537,23 @@ export default function LeadDrawer({
                     <Label className="text-sm text-[#344054]">Amount received <span className="text-red-500">*</span></Label>
                     <div className="relative">
                       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#98a2b3]">₹</span>
-                      <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="" className="h-10 rounded-md border-[#e4e7ec] pl-7" />
+                      <Input type="number" min={1} value={amount} onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          setAmount('');
+                          return;
+                        }
+                        if (/^\d+$/.test(val)) {
+                          setAmount(val);
+                        } else {
+                          showToast({
+                            title: 'Warning',
+                            description: "Please type Amount in correct format",
+                            type: 'warning',
+                            duration: 4000
+                          })
+                        }
+                      }} placeholder="" className="h-10 rounded-md border-[#e4e7ec] pl-7" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
@@ -489,7 +580,7 @@ export default function LeadDrawer({
             </TabsContent>
           </div>
         </Tabs>
-        <EditLead id={lead?.id} open={editClient} setOpen={setEditClient} />
+        <EditLead id={lead?.id} client={client} open={editClient} setOpen={setEditClient} refreshClients={refreshClients} />
 
       </SheetContent>
     </Sheet>
@@ -507,5 +598,3 @@ function ToolbarBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
     </button>
   )
 }
-
-

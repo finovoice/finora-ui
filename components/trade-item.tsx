@@ -45,25 +45,23 @@ export default function TradeItem({ trade, onOpen, onEdit, onExit, onPreview }: 
   return (
     <Card className="w-full border-[#e4e7ec] bg-white">
       <div className="flex items-center gap-3 px-4 py-3">
-        <button type="button" onClick={() => onOpen?.()} className="flex flex-1 items-center gap-3 text-left">
-          {/* BUY/SELL pill with dot */}
-          <span className="inline-flex items-center gap-2 rounded-md border border-[#e6f4d7] bg-[#e6f4d7] px-2 py-1 text-xs font-medium text-[#326212]">
-            <span className="inline-block h-2 w-2 rounded-full bg-[#a6ef67]" aria-hidden />
-            {side}
-          </span>
+        {/* BUY/SELL pill with dot */}
+        <span className="inline-flex items-center gap-2 rounded-md border border-[#e6f4d7] bg-[#e6f4d7] px-2 py-1 text-xs font-medium text-[#326212]">
+          <span className="inline-block h-2 w-2 rounded-full bg-[#a6ef67]" aria-hidden />
+          {side}
+        </span>
 
-          <div className="font-medium text-[#344054]">{symbol}</div>
+        <div className="font-medium text-[#344054]">{symbol}</div>
 
-          {/* Tags */}
-          <span className="ml-1 inline-flex items-center rounded-md border border-[#e4e7ec] bg-[#f2f4f7] px-2 py-0.5 text-[10px] font-medium uppercase text-[#475467]">
-            {segment}
+        {/* Tags */}
+        <span className="ml-1 inline-flex items-center rounded-md border border-[#e4e7ec] bg-[#f2f4f7] px-2 py-0.5 text-[10px] font-medium uppercase text-[#475467]">
+          {segment}
+        </span>
+        {intraday && (
+          <span className="inline-flex items-center rounded-md border border-[#e4e7ec] bg-[#f2f4f7] px-2 py-0.5 text-[10px] font-medium uppercase text-[#475467]">
+            INTRADAY
           </span>
-          {intraday && (
-            <span className="inline-flex items-center rounded-md border border-[#e4e7ec] bg-[#f2f4f7] px-2 py-0.5 text-[10px] font-medium uppercase text-[#475467]">
-              INTRADAY
-            </span>
-          )}
-        </button>
+        )}
 
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-1 text-[#667085]">

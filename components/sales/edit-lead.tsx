@@ -11,24 +11,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Switch } from "../ui/switch";
 import { showToast } from '../ui/toast-manager';
 import { editLeadAPI, importLeadAPI } from "@/services/clients";
-import { EditableClient, LeadType } from "@/constants/types";
+import { ClientType, EditableClient, LeadType } from "@/constants/types";
 
 type Props = {
     id?: string,
+    client: ClientType
     open: boolean,
-    setOpen: (value: boolean) => void
+    setOpen: (value: boolean) => void,
+    refreshClients: () => void
 }
 
-export default function EditLead({ id, open, setOpen }: Props) {
+export default function EditLead({ id, client, open, setOpen, refreshClients }: Props) {
     const [sending, setSending] = useState<boolean>(false);
     const [firstName, setFirstName] = useState<string>("");
     const [lastName, setLastName] = useState<string>("");
     const [email, setEmail] = useState<string>("");
     const [phoneNumber, setPhoneNumber] = useState<string>("");
     const [assignedRM, setAssignedRM] = useState<string>("1"); // Default value
+    const [countryCode, setCountryCode] = useState("IND (+91)");
+
 
     function isValidEmail(email: string) {
         return /\S+@\S+\.\S+/.test(email);
+    }
+    const isValidIndianPhone = (phoneNumber: string): boolean => {
+        return /^[6-9]\d{9}$/.test(phoneNumber);
+    };
+    function isValidIndianName(name: string): boolean {
+        const regex = /^[A-Za-z\s\-]+$/;
+        return regex.test(name.trim());
     }
 
     async function handleSubmit() {
@@ -50,6 +61,37 @@ export default function EditLead({ id, open, setOpen }: Props) {
                 type: 'warning',
                 duration: 3000
             });
+            return
+        }
+
+        if (firstName.trim() && !isValidIndianName(firstName.trim())) {
+            showToast({
+                title: 'Invalid First Name',
+                description: 'Please add First Name in correct format',
+                type: 'warning',
+                duration: 3000
+            });
+            return
+        }
+
+        if (lastName.trim() && !isValidIndianName(lastName.trim())) {
+            showToast({
+                title: 'Invalid Last Name',
+                description: 'Please add Last Name in correct format',
+                type: 'warning',
+                duration: 3000
+            });
+            return
+        }
+
+        if (phoneNumber && !isValidIndianPhone(phoneNumber.trim())) {
+            showToast({
+                title: 'Phone number not valid',
+                description: 'Please Add a correct phone number value',
+                type: 'warning',
+                duration: 3000
+            });
+            return
         }
 
         editedLead = {
@@ -68,6 +110,8 @@ export default function EditLead({ id, open, setOpen }: Props) {
                 description: "Lead Editted!",
                 type: 'success'
             })
+            refreshClients();
+
         }
         catch (e) {
             console.log('error :', e)
@@ -79,7 +123,12 @@ export default function EditLead({ id, open, setOpen }: Props) {
         }
         finally {
             setSending(false);
+            setFirstName("")
+            setLastName("")
+            setEmail("")
+            setPhoneNumber("")
             setOpen(false);
+
         }
     }
     return (
@@ -92,30 +141,32 @@ export default function EditLead({ id, open, setOpen }: Props) {
                 <Tabs className="w-full">
                     <div className="grid grid-cols-2 gap-4 px-6 pb-1">
                         <div>
-                            <Label htmlFor="first-name" className="text-sm font-medium text-[#344054] mb-1 block">First name <span className="text-red-500">*</span></Label>
-                            <Input id="first-name" placeholder="First name" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                            <Label htmlFor="first-name" className="text-sm font-medium text-[#344054] mb-1 block">First name</Label>
+                            <Input id="first-name" placeholder={`${client.first_name}`} className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                         </div>
                         <div>
-                            <Label htmlFor="last-name" className="text-sm font-medium text-[#344054] mb-1 block">Last name <span className="text-red-500">*</span></Label>
-                            <Input id="last-name" placeholder="Last name" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                            <Label htmlFor="last-name" className="text-sm font-medium text-[#344054] mb-1 block">Last name </Label>
+                            <Input id="last-name" placeholder={`${client.last_name}`} className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                         </div>
                         <div>
                             <Label htmlFor="email" className="text-sm font-medium text-[#344054] mb-1 block">Email</Label>
-                            <Input id="email" placeholder="olivia.rhye@email.com" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={email} onChange={(e) => setEmail(e.target.value)} />
+                            <Input id="email" placeholder={`${client.email}`} className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={email} onChange={(e) => setEmail(e.target.value)} />
                         </div>
                         <div>
-                            <Label htmlFor="phone-number" className="text-sm font-medium text-[#344054] mb-1 block">Phone number <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="phone-number" className="text-sm font-medium text-[#344054] mb-1 block">Phone number</Label>
                             <div className="flex">
-                                <Select defaultValue="IND (+91)">
+                                <Select value="+91" onValueChange={setCountryCode}>
                                     <SelectTrigger className="w-[103px] !h-10 gap-0 rounded-r-none border-r-0 border-[#d0d5dd] focus:ring-0 focus:ring-offset-0">
-                                        <SelectValue placeholder="Select" />
+                                        <SelectValue>IND (+91)</SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="IND (+91)">IND (+91)</SelectItem>
-                                        <SelectItem value="USA (+1)">USA (+1)</SelectItem>
+                                        <SelectItem value="+91">IND (+91)</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <Input id="phone-number" placeholder="9876543210" className="flex-1 h-10 rounded-l-none border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+                                <Input type="number"
+                                    placeholder={`${client.phone_number}`}
+                                    className="flex-1 h-10 rounded-l-none border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                    value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
                             </div>
                         </div>
                     </div>
