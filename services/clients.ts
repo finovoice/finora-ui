@@ -5,7 +5,18 @@ import { ClientType, EditableClient, LeadType } from "@/constants/types";
 const CLIENT_API_SERVICE_URL = `${BACKEND_URL}/api/core/clients/`
 const BULK_CREATE_LEADS_API_SERVICE_URL = `${BACKEND_URL}/api/core/clients/bulk-create/`
 
-export const getClientsAPI = async (query: string = ''): Promise<ClientType[]> => {
+
+interface GetClientsResponse {
+    data: ClientType[]
+    metadata: {
+        total_count: number
+        total_pages: number
+        current_page: number
+        page_size: number
+    }
+}
+
+export const getClientsAPI = async (query: string = ''): Promise<GetClientsResponse> => {
   return await sendGetRequest(CLIENT_API_SERVICE_URL + query, "clients")
 }
 

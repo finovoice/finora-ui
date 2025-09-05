@@ -10,6 +10,7 @@ import ClientDrawer from "@/components/clients/client-drawer"
 import { getClientsAPI } from "@/services/clients"
 import type { ClientType } from "@/constants/types"
 import type { Client as DrawerClient } from "@/components/clients/client-drawer"
+import {startServerAPI} from "@/services";
 
 
 
@@ -19,7 +20,10 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<ClientType[]>([])
 
   useEffect(() => {
-    getClientsAPI().then(setClients).catch(() => setClients([]))
+      startServerAPI().then(() => { console.log("Starting clients") })
+      getClientsAPI("?is_converted_to_client=true").then((responseData) => {
+          setClients(responseData.data)
+      });
   }, [])
 
   function openActionsDrawer(client: ClientType) {

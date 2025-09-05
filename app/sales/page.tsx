@@ -36,9 +36,9 @@ export default function SalesPage() {
     setLoading(true);
     try {
       await startServerAPI();
-      const data = await getClientsAPI("?is_converted_to_client=false");
-      setClientList(data);
-      const newlead = data.find(c => c.id == activeLead?.id)
+      const responseData = await getClientsAPI("?is_converted_to_client=false");
+      setClientList(responseData.data);
+      const newlead = responseData.data.find(c => c.id == activeLead?.id)
       if (newlead) {
         setClient(newlead)
       }
