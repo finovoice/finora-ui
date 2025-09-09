@@ -440,6 +440,15 @@ export default function LeadDrawer({
                   </div>
                 </div>
               </div>
+                <div className="flex justify-end mt-4">
+                    <Button
+                        onClick={handleEditClientSubmit}
+                        disabled={sending || (disposition == '' && plan == '' && client?.lead_stage == stage && text == '')}
+                    >
+                        {sending ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                </div>
+
             </TabsContent>
 
             {/* Onboard */}
