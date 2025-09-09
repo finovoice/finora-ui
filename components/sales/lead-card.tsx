@@ -1,4 +1,4 @@
-import { CalendarDays, Flame, ShieldCheck, UserRound, RefreshCw, MessageSquare, ShoppingBag, Snowflake, Sun, Minus, PhoneOff } from 'lucide-react'
+import { CalendarDays, Flame, ShieldCheck, UserRound, RefreshCw, MessageSquare, ShoppingBag, Snowflake, Sun, Minus, PhoneOff, Award, Medal, Trophy, Crown, Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import {Profile} from "@/constants/types";
 
@@ -42,6 +42,40 @@ const getProfileColor = (profile: Profile) => {
       return 'bg-[#fef2f2] text-[#dc2626]'
     default:
       return 'bg-[#f3f4f6] text-[#374151]'
+  }
+}
+
+const getTierIcon = (tier: string) => {
+  switch (tier) {
+    case 'BRONZE':
+      return <Award className="h-3 w-3" />
+    case 'SILVER':
+      return <Medal className="h-3 w-3" />
+    case 'GOLD':
+      return <Trophy className="h-3 w-3" />
+    case 'PLATINUM':
+      return <Star className="h-3 w-3" />
+    case 'ELITE':
+      return <Crown className="h-3 w-3" />
+    default:
+      return <ShoppingBag className="h-3 w-3" />
+  }
+}
+
+const getTierColor = (tier: string) => {
+  switch (tier) {
+    case 'BRONZE':
+      return 'bg-[#fef7e0] text-[#92400e]'
+    case 'SILVER':
+      return 'bg-[#f8fafc] text-[#475569]'
+    case 'GOLD':
+      return 'bg-[#fffbeb] text-[#d97706]'
+    case 'PLATINUM':
+      return 'bg-[#f0fdf4] text-[#166534]'
+    case 'ELITE':
+      return 'bg-[#ede9fe] text-[#7c3aed]'
+    default:
+      return 'bg-[#eef4ff] text-[#1d4ed8]'
   }
 }
 
@@ -105,10 +139,10 @@ export default function LeadCard({ name, date, owner, hot = false, tier, profile
               {profile}
             </span>
           )}
-          {tier == 'ELITE' && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2 py-0.5 text-[11px] font-medium text-blue-700">
-              <ShoppingBag size={11} />
-              Elite
+          {tier && (
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${getTierColor(tier)}`}>
+              {getTierIcon(tier)}
+              {tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase()}
             </span>
           )}
         </div>

@@ -417,17 +417,6 @@ export default function LeadDrawer({
                     </SelectContent>
                   </Select>
                 </div>
-                {/* <div className="space-y-2">
-                  <Label className="text-sm text-[#344054]">Plan interested</Label>
-                  <Select open={isPlanInterestedSelectOpen} onOpenChange={setIsPlanInterestedSelectOpen} value={plan} onValueChange={setPlan}>
-                    <SelectTrigger className="h-10 w-full rounded-md border-[#e4e7ec]"><SelectValue placeholder="Select one" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="STANDARD">Standard</SelectItem>
-                      <SelectItem value="PREMIUM">Premium</SelectItem>
-                      <SelectItem value="ELITE">Elite</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div> */}
               </div>
 
               {/* Notepad */}
