@@ -11,8 +11,7 @@ import AddLead from "@/components/sales/add-lead"
 import { showToast, ToastManager } from "@/components/ui/toast-manager"
 import { startServerAPI } from "@/services"
 import { getClientsAPI } from "@/services/clients"
-import { ClientType, LeadStage } from "@/constants/types"
-import EditLead from "@/components/sales/edit-lead"
+import {ClientType, LeadStage, Profile} from "@/constants/types"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command"
 import LoadingSpinner from "@/components/ui/loading-spinner"
@@ -256,6 +255,7 @@ export default function SalesPage() {
                           phone: lead.phone,
                           email: lead.email,
                           stage: lead.stage,
+                          profile: lead.profile,
                         })}
                         className="block w-full text-left"
                       >
@@ -307,6 +307,7 @@ type Column = {
     email?: string;
     stage: LeadStage;
     owner: string;
+    profile: Profile;
   })[];
 };
 
@@ -354,6 +355,7 @@ function transformLeads(
       email: lead.email,
       owner: lead.assigned_rm?.email,
       stage: stage,
+      profile: lead.profile
     });
   });
   return Object.values(grouped);

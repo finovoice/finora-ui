@@ -1,5 +1,6 @@
-import { CalendarDays, Flame, ShieldCheck, UserRound, RefreshCw, MessageSquare, ShoppingBag } from 'lucide-react'
+import { CalendarDays, Flame, ShieldCheck, UserRound, RefreshCw, MessageSquare, ShoppingBag, Snowflake, Sun, Minus, PhoneOff } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import {Profile} from "@/constants/types";
 
 export type LeadCardProps = {
   name: string
@@ -7,9 +8,44 @@ export type LeadCardProps = {
   owner?: string
   hot?: boolean
   tier?: string
+  profile: Profile
 }
 
-export default function LeadCard({ name, date, owner, hot = false, tier }: LeadCardProps) {
+const getProfileIcon = (profile: Profile) => {
+  switch (profile) {
+    case 'HOT':
+      return <Flame className="h-3 w-3" />
+    case 'COLD':
+      return <Snowflake className="h-3 w-3" />
+    case 'WARM':
+      return <Sun className="h-3 w-3" />
+    case 'NEUTRAL':
+      return <Minus className="h-3 w-3" />
+    case 'DND':
+      return <PhoneOff className="h-3 w-3" />
+    default:
+      return <UserRound className="h-3 w-3" />
+  }
+}
+
+const getProfileColor = (profile: Profile) => {
+  switch (profile) {
+    case 'HOT':
+      return 'bg-[#fff7ed] text-[#c2410c]'
+    case 'COLD':
+      return 'bg-[#f0f9ff] text-[#0284c7]'
+    case 'WARM':
+      return 'bg-[#fefce8] text-[#ca8a04]'
+    case 'NEUTRAL':
+      return 'bg-[#f9fafb] text-[#6b7280]'
+    case 'DND':
+      return 'bg-[#fef2f2] text-[#dc2626]'
+    default:
+      return 'bg-[#f3f4f6] text-[#374151]'
+  }
+}
+
+export default function LeadCard({ name, date, owner, hot = false, tier, profile }: LeadCardProps) {
   const textRef = useRef<HTMLHeadingElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
@@ -62,22 +98,20 @@ export default function LeadCard({ name, date, owner, hot = false, tier }: LeadC
             <span className='border-1 rounded border-black/40 text-[0.6rem] px-0.5 font-xs'>RM</span>
             <span>{owner}</span>
           </div>}
-        {
-          (hot || tier == 'ELITE') &&
-          <div className="flex flex-col items-left w-fit gap-2">
-            {hot && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#fff7ed] px-2 py-0.5 text-[11px] font-medium text-[#c2410c]">
-                <Flame className="h-3 w-3" />
-                Hot
-              </span>
-            )}
-            {tier == 'ELITE' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2 py-0.5 text-[11px] font-medium text-blue-700">
-                <ShoppingBag size={11} />
-                Elite
-              </span>
-            )}
-          </div>}
+        <div className="flex flex-col items-left w-fit gap-2">
+          {profile && (
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${getProfileColor(profile)}`}>
+              {getProfileIcon(profile)}
+              {profile}
+            </span>
+          )}
+          {tier == 'ELITE' && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2 py-0.5 text-[11px] font-medium text-blue-700">
+              <ShoppingBag size={11} />
+              Elite
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )

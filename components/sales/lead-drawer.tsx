@@ -22,7 +22,7 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import EditLead from "./edit-lead"
 import { uploadFileAPI } from "@/services/upload"
 import { showToast } from "../ui/toast-manager"
-import { ClientType, EditableClient, LeadStage, SubscriptionType } from "@/constants/types"
+import {ClientType, EditableClient, LeadStage, Profile, SubscriptionType} from "@/constants/types"
 import { editLeadAPI } from "@/services/clients"
 import { title } from "process"
 import { createSubscriptionAPI } from "@/services/subscription"
@@ -35,6 +35,7 @@ export type Lead = {
   phone?: string
   email?: string
   stage: LeadStage
+  profile: Profile
 }
 
 export default function LeadDrawer({

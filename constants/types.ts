@@ -104,7 +104,7 @@ export type EditableClient = {
   pancard?: string
   dob?: string
   organisation?: number
-  profile?: string
+  profile?: Profile
   notes?: string
   ekyc?: string
   risk?: string
@@ -145,3 +145,5 @@ export type SubscriptionType = {
 };
 
 export type LeadStage = "LEAD" | "CONTACTED" | "DOCUMENTED" | "AWAITING_PAYMENT";
+
+export type Profile = "HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND" | string;
