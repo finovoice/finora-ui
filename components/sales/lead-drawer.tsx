@@ -439,15 +439,6 @@ export default function LeadDrawer({
                     <ToolbarBtn icon={<ListOrdered className="h-4 w-4" />} label="Numbered list" />
                   </div>
                 </div>
-                <div className="border-t border-[#e4e7ec] pt-4">
-                  <Button
-                    className="w-full"
-                    onClick={handleEditClientSubmit}
-                    disabled={sending || (disposition == '' && plan == '' && client?.lead_stage == stage && text == '')}
-                  >
-                    {sending ? 'Editting...' : 'Edit Lead'}
-                  </Button>
-                </div>
               </div>
             </TabsContent>
 
@@ -516,6 +507,14 @@ export default function LeadDrawer({
                     <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder="yyyy-mm-dd" className="h-10 rounded-md border-[#e4e7ec]" />
                   </div>
 
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button
+                    onClick={handleEditClientSubmit}
+                    disabled={sending || (disposition == '' && plan == '' && client?.lead_stage == stage && text == '')}
+                  >
+                    {sending ? 'Saving...' : 'Save Changes'}
+                  </Button>
                 </div>
               </div>
 
