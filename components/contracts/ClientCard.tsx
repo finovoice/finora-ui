@@ -3,11 +3,11 @@
 import React from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ContractUploadResponse } from '@/constants/types'
+import { ClientType } from '@/constants/types'
 import { User, Mail, Phone, CreditCard, Calendar, FileText } from 'lucide-react'
 
 interface ClientCardProps {
-  client: ContractUploadResponse
+  client: ClientType
 }
 
 export default function ClientCard({ client }: ClientCardProps) {

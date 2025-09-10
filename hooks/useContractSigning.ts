@@ -5,7 +5,7 @@ import { uploadContractAPI, refreshSigningStatusAPI } from '@/services/clients'
 import { ContractUploadResponse, RefreshStatusResponse } from '@/constants/types'
 import { showToast } from '@/components/ui/toast-manager'
 
-export function useContractSigning() {
+export function useContractSigning(onClientUpdate?: (updatedClient: ContractUploadResponse) => void) {
   const [isUploading, setIsUploading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [contractData, setContractData] = useState<ContractUploadResponse | null>(null)
@@ -26,6 +26,12 @@ export function useContractSigning() {
       const response = await uploadContractAPI(file, clientId)
       setContractData(response)
       setUploadedFile(file)
+
+      // Notify parent component of client update
+      if (onClientUpdate) {
+        onClientUpdate(response)
+      }
+
       showToast({ 
         title: 'Success', 
         description: 'Contract uploaded successfully', 
@@ -42,7 +48,7 @@ export function useContractSigning() {
     } finally {
       setIsUploading(false)
     }
-  }, [])
+  }, [onClientUpdate])
 
   const refreshSigningStatus = useCallback(async (requestId: string, clientId: string) => {
     if (!requestId || !clientId) {
@@ -58,6 +64,12 @@ export function useContractSigning() {
     try {
       const response = await refreshSigningStatusAPI(requestId, clientId)
       setContractData(response)
+
+      // Notify parent component of client update
+      if (onClientUpdate) {
+        onClientUpdate(response)
+      }
+
       showToast({ 
         title: 'Status Updated', 
         description: 'Signing status refreshed successfully', 
@@ -74,7 +86,7 @@ export function useContractSigning() {
     } finally {
       setIsRefreshing(false)
     }
-  }, [])
+  }, [onClientUpdate])
 
   const copySigningLink = useCallback((url: string) => {
     if (!url) {

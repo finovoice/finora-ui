@@ -1,11 +1,11 @@
 "use client"
 
 import React from 'react'
-import { ContractUploadResponse } from '@/constants/types'
+import { ClientType } from '@/constants/types'
 import { CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react'
 
 interface SigningStatusProps {
-  contractData: ContractUploadResponse
+  client: ClientType
 }
 
 interface StatusStep {
@@ -16,9 +16,9 @@ interface StatusStep {
   icon: React.ReactNode
 }
 
-export default function SigningStatus({ contractData }: SigningStatusProps) {
+export default function SigningStatus({ client }: SigningStatusProps) {
   const getSteps = (): StatusStep[] => {
-    const { setu_signature_status, original_document_url, setu_signed_document_url } = contractData
+    const { setu_signature_status, original_document_url, setu_signed_document_url } = client
 
     return [
       {
@@ -113,19 +113,19 @@ export default function SigningStatus({ contractData }: SigningStatusProps) {
                 </p>
 
                 {/* Additional status info */}
-                {step.id === 'signed' && contractData.setu_signature_status === 'sign_initiated' && (
+                {step.id === 'signed' && client.setu_signature_status === 'sign_initiated' && (
                   <p className="text-xs text-blue-600 mt-1 font-medium">
                     Waiting for client signature...
                   </p>
                 )}
 
-                {step.id === 'signed' && contractData.setu_signature_status === 'sign_in_progress' && (
+                {step.id === 'signed' && client.setu_signature_status === 'sign_in_progress' && (
                   <p className="text-xs text-orange-600 mt-1 font-medium">
                     Client is currently signing the document...
                   </p>
                 )}
 
-                {step.id === 'signed' && contractData.setu_signature_status === 'failed' && (
+                {step.id === 'signed' && client.setu_signature_status === 'failed' && (
                   <p className="text-xs text-red-600 mt-1 font-medium">
                     Signing process failed
                   </p>

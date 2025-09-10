@@ -3,11 +3,11 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import LoadingSpinner from '@/components/ui/loading-spinner'
-import { ContractUploadResponse } from '@/constants/types'
+import { ClientType } from '@/constants/types'
 import { Send, Copy, RefreshCw, FileText, ExternalLink } from 'lucide-react'
 
 interface SigningActionsProps {
-  contractData: ContractUploadResponse
+  client: ClientType
   isRefreshing: boolean
   onSendForSigning: () => void
   onCopyLink: (url: string) => void
@@ -16,14 +16,14 @@ interface SigningActionsProps {
 }
 
 export default function SigningActions({ 
-  contractData, 
+  client, 
   isRefreshing, 
   onSendForSigning, 
   onCopyLink, 
   onRefreshStatus,
   onViewDocument
 }: SigningActionsProps) {
-  const { setu_signature_status, setu_signature_url, setu_signature_id, setu_signed_document_url, id } = contractData
+  const { setu_signature_status, setu_signature_url, setu_signature_id, setu_signed_document_url, id } = client
 
   const handleRefreshStatus = () => {
     if (setu_signature_id && id) {
@@ -107,7 +107,7 @@ export default function SigningActions({
             >
               {isRefreshing ? (
                 <>
-                  <LoadingSpinner className="w-4 h-4 mr-2" />
+                  <LoadingSpinner />
                   Refreshing...
                 </>
               ) : (

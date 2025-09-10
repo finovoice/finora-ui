@@ -9,7 +9,6 @@ import { useLeadDrawer } from "@/contexts/LeadDrawerContext"
 import { useContractSigning } from "@/hooks/useContractSigning"
 import { showToast } from "@/components/ui/toast-manager"
 import ContractUploader from "@/components/contracts/ContractUploader"
-import ClientCard from "@/components/contracts/ClientCard"
 import SigningActions from "@/components/contracts/SigningActions"
 import SigningStatus from "@/components/contracts/SigningStatus"
 
@@ -47,8 +46,6 @@ export default function OnboardTab() {
     viewSignedDocument,
     resetContract
   } = useContractSigning()
-
-  console.log({contractData, client})
 
   const [isPlanSelectedSelectOpen, setIsPlanSelectedSelectOpen] = React.useState(false)
   const [isRiskProfileSelectOpen, setIsRiskProfileSelectOpen] = React.useState(false)
@@ -93,15 +90,15 @@ export default function OnboardTab() {
         disabled={sending}
       />
 
-      {/* Client Details Card - Show after successful upload */}
-      {contractData && (
-        <ClientCard client={contractData} />
-      )}
+      {/*/!* Client Details Card - Show when client has contract data or after successful upload *!/*/}
+      {/*{(client.setu_signature_status || contractData) && (*/}
+      {/*  <ClientCard client={client} />*/}
+      {/*)}*/}
 
-      {/* Signing Actions - Show after upload */}
-      {contractData && (
+      {/* Signing Actions - Show when client has signing data or after upload */}
+      {(client.setu_signature_status || contractData) && (
         <SigningActions
-          contractData={contractData}
+          client={client}
           isRefreshing={isRefreshing}
           onSendForSigning={handleSendForSigning}
           onCopyLink={copySigningLink}
@@ -110,9 +107,9 @@ export default function OnboardTab() {
         />
       )}
 
-      {/* Signing Status Progress - Show after upload */}
-      {contractData && (
-        <SigningStatus contractData={contractData} />
+      {/* Signing Status Progress - Show when client has signing data or after upload */}
+      {(client.setu_signature_status || contractData) && (
+        <SigningStatus client={client} />
       )}
 
       {/* Plan Details Section */}
