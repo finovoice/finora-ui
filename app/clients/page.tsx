@@ -5,31 +5,32 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertTriangle, ChevronDown, MessageSquare, RefreshCcw, Search, Upload } from 'lucide-react'
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import ClientDrawer from "@/components/clients/client-drawer"
-import { getClientsAPI } from "@/services/clients"
 import type { ClientType } from "@/constants/types"
 import type { Client as DrawerClient } from "@/components/clients/client-drawer"
-import {startServerAPI} from "@/services";
+import { useClients } from "@/contexts/ClientsContext"
 
 
 
 export default function ClientsPage() {
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [activeClient, setActiveClient] = useState<ClientType | null>(null)
-  const [clients, setClients] = useState<ClientType[]>([])
+  const {
+    loading,
+    clients,
+    drawerOpen,
+    activeClient,
+    refreshClients,
+    openActionsDrawer,
+    closeDrawer,
+  } = useClients()
 
   useEffect(() => {
-      startServerAPI().then(() => { console.log("Starting clients") })
-      getClientsAPI("?is_converted_to_client=true").then((responseData) => {
-          setClients(responseData.data)
-      });
-  }, [])
-
-  function openActionsDrawer(client: ClientType) {
-    setActiveClient(client)
-    setDrawerOpen(true)
-  }
+    let mounted = true
+    if (mounted) {
+      refreshClients()
+    }
+    return () => { mounted = false }
+  }, [refreshClients])
 
   return (
     <div className="min-h-screen bg-[#f9fafb] text-[#101828]">
@@ -153,7 +154,7 @@ export default function ClientsPage() {
           {/* Drawer */}
           <ClientDrawer
             open={drawerOpen}
-            onOpenChange={setDrawerOpen}
+            onOpenChange={(open) => (open ? undefined : closeDrawer())}
             client={activeClient ? toDrawerClient(activeClient) : null}
           />
         </main>

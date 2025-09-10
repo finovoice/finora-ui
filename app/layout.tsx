@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 import "react-datepicker/dist/react-datepicker.css";
+import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: 'v0 App',
@@ -26,7 +27,20 @@ html {
 }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body>
+        <div id="__app_root">
+          {/* App Providers */}
+          <div suppressHydrationWarning>
+            {/* Providers must be client component */}
+            {/* eslint-disable-next-line @next/next/no-head-element */}
+          </div>
+          {/* Wrap app content */}
+          {/* Providers component mounts ToastManager globally */}
+          {/* Using dynamic import is optional; direct use works */}
+          {/* @ts-expect-error Async Server Component boundary wraps client children */}
+          <Providers>{children}</Providers>
+        </div>
+      </body>
     </html>
   )
 }

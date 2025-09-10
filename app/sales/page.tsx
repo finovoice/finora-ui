@@ -2,58 +2,40 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import LeadCard, { type LeadCardProps } from "@/components/sales/lead-card"
+import LeadCard from "@/components/sales/lead-card"
 import Sidebar from "@/components/sidebar"
 import { ChevronDown, Upload, RotateCcw, Search, Check } from 'lucide-react'
 import LeadDrawer, { type Lead } from "@/components/sales/lead-drawer"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect } from "react"
 import AddLead from "@/components/sales/add-lead"
-import { showToast, ToastManager } from "@/components/ui/toast-manager"
-import { startServerAPI } from "@/services"
-import { getClientsAPI } from "@/services/clients"
 import {ClientType, LeadStage, Profile} from "@/constants/types"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command"
 import LoadingSpinner from "@/components/ui/loading-spinner"
+import { useSales } from "@/contexts/SalesContext"
 
 
 export default function SalesPage() {
-  const [loading, setLoading] = useState<boolean>(true)
-  const [clientList, setClientList] = useState<ClientType[]>([])
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [activeLead, setActiveLead] = useState<Lead | null>(null)
-  const [addLead, setAddLead] = useState<boolean>(false)
-  const [collapsedColumns, setCollapsedColumns] = useState<Record<string, boolean>>({})
-  const [client, setClient] = useState<ClientType>()
-
-  // Filter states
-  const [selectedPlan, setSelectedPlan] = useState<string[]>([])
-  const [selectedLeadQuality, setSelectedLeadQuality] = useState<("HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND")[]>([])
-  const [searchQuery, setSearchQuery] = useState<string>("")
-
-  const refreshClients = async () => {
-    setLoading(true);
-    try {
-      await startServerAPI();
-      const responseData = await getClientsAPI("?is_converted_to_client=false");
-      setClientList(responseData.data);
-      const newlead = responseData.data.find(c => c.id == activeLead?.id)
-      if (newlead) {
-        setClient(newlead)
-      }
-
-    } catch (e: any) {
-      console.error("Error fetching sales:", e);
-      showToast({
-        title: "Error",
-        description: `Error: Failed to load Sales`,
-        type: 'error',
-        duration: 3000
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    loading,
+    clientList,
+    drawerOpen,
+    activeLead,
+    addLeadOpen,
+    currentClient,
+    selectedPlan,
+    selectedLeadQuality,
+    searchQuery,
+    refreshClients,
+    openDrawerForLead,
+    closeDrawer,
+    toggleAddLead,
+    toggleColumnCollapse,
+    setSelectedPlan,
+    setSelectedLeadQuality,
+    setSearchQuery,
+    resetFilters,
+  } = useSales()
 
   useEffect(() => {
     let mounted = true;
@@ -63,7 +45,7 @@ export default function SalesPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [refreshClients]);
 
   // Generate filter options
   const planOptions: ('STANDARD' | "PREMIUM" | 'ELITE')[] = ['STANDARD', 'PREMIUM', 'ELITE']
@@ -72,25 +54,11 @@ export default function SalesPage() {
   const columns = transformLeads(clientList, selectedPlan, selectedLeadQuality, searchQuery)
 
   function openDrawer(lead: Lead) {
-    const id = lead.id
-    const clientdata = clientList.find(c => String(c.id) === String(id))
-
-    setClient(clientdata)
-    setActiveLead(lead)
-    setDrawerOpen(true)
-  }
-
-  const toggleColumnCollapse = (columnId: string) => {
-    setCollapsedColumns(prev => ({
-      ...prev,
-      [columnId]: !prev[columnId]
-    }))
+    openDrawerForLead(lead)
   }
 
   const handleResetFilters = () => {
-    setSelectedPlan([])
-    setSelectedLeadQuality([])
-    setSearchQuery("")
+    resetFilters()
   }
 
   return (
@@ -101,7 +69,7 @@ export default function SalesPage() {
           <header className="sticky top-0 z-10 border-b border-[#e4e7ec] bg-[#fafafa]">
             <div className="flex items-center justify-between px-6 py-4">
               <h1 className="text-lg font-semibold text-[#101828]">Sales</h1>
-              <Button onClick={() => setAddLead(true)}
+              <Button onClick={() => toggleAddLead(true)}
                 className="h-9 gap-2 rounded-md border-1 border-black/30 bg-transparent text-black/70 hover:text-[#7f56d9] hover:border-[#7f56d9] hover:bg-transparent">
                 <Upload className="h-4 w-4" />
                 Import leads
@@ -271,13 +239,20 @@ export default function SalesPage() {
       </div>
 
       {/* Right-hand drawer */}
-      {client ? <LeadDrawer open={drawerOpen} onOpenChange={setDrawerOpen} lead={activeLead} client={client} refreshClients={refreshClients} /> : ''}
+      {currentClient ? (
+        <LeadDrawer
+          open={drawerOpen}
+          onOpenChange={(open) => (open ? undefined : closeDrawer())}
+          lead={activeLead}
+          client={currentClient}
+          refreshClients={refreshClients}
+        />
+      ) : null}
       <AddLead
-        open={addLead}
-        setOpen={setAddLead}
+        open={addLeadOpen}
+        setOpen={toggleAddLead}
         refreshClients={refreshClients}
       />
-      <ToastManager />
     </div>
   )
 }
