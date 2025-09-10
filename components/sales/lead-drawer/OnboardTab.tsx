@@ -40,6 +40,14 @@ export default function OnboardTab() {
   const [isPlanSelectedSelectOpen, setIsPlanSelectedSelectOpen] = React.useState(false)
   const [isRiskProfileSelectOpen, setIsRiskProfileSelectOpen] = React.useState(false)
 
+  // Validation function for Plan Details fields
+  const isPlanDetailsValid = () => {
+    return plan && plan.trim() !== '' && 
+           riskProfile && riskProfile.trim() !== '' && 
+           pan && pan.trim() !== '' && 
+           dob && dob.trim() !== ''
+  }
+
   return (
     <div className="space-y-6 px-5 py-5">
       <div>
@@ -101,7 +109,7 @@ export default function OnboardTab() {
           </div>
         </div>
         <div className="flex justify-end mt-4">
-          <Button onClick={handleEditClientSubmit} disabled={sending || (disposition == '' && plan == '' && client?.lead_stage == stage && text == '')}>
+          <Button onClick={handleEditClientSubmit} disabled={sending || !isPlanDetailsValid() || (disposition == '' && plan == '' && client?.lead_stage == stage && text == '')}>
             {sending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
