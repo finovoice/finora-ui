@@ -2,13 +2,12 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "../ui/dialog";
 import { Button } from "../ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Switch } from "../ui/switch";
 import { showToast } from '../ui/toast-manager';
 import { editLeadAPI, importLeadAPI } from "@/services/clients";
 import { ClientType, EditableClient, LeadType } from "@/constants/types";
@@ -131,6 +130,14 @@ export default function EditLead({ id, client, open, setOpen, refreshClients }: 
 
         }
     }
+    useEffect(() => {
+        if (open && client) {
+            setFirstName(client.first_name || "");
+            setLastName(client.last_name || "");
+            setEmail(client.email || "");
+            setPhoneNumber(client.phone_number || "");
+        }
+    }, [open, client]);
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="max-w-md p-0 overflow-hidden rounded-xl">
@@ -142,15 +149,15 @@ export default function EditLead({ id, client, open, setOpen, refreshClients }: 
                     <div className="grid grid-cols-2 gap-4 px-6 pb-1">
                         <div>
                             <Label htmlFor="first-name" className="text-sm font-medium text-[#344054] mb-1 block">First name</Label>
-                            <Input id="first-name" placeholder={`${client.first_name}`} className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                            <Input id="first-name" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                         </div>
                         <div>
                             <Label htmlFor="last-name" className="text-sm font-medium text-[#344054] mb-1 block">Last name </Label>
-                            <Input id="last-name" placeholder={`${client.last_name}`} className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                            <Input id="last-name" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                         </div>
                         <div>
                             <Label htmlFor="email" className="text-sm font-medium text-[#344054] mb-1 block">Email</Label>
-                            <Input id="email" placeholder={`${client.email}`} className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={email} onChange={(e) => setEmail(e.target.value)} />
+                            <Input id="email"  className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={email} onChange={(e) => setEmail(e.target.value)} />
                         </div>
                         <div>
                             <Label htmlFor="phone-number" className="text-sm font-medium text-[#344054] mb-1 block">Phone number</Label>
@@ -164,7 +171,6 @@ export default function EditLead({ id, client, open, setOpen, refreshClients }: 
                                     </SelectContent>
                                 </Select>
                                 <Input type="number"
-                                    placeholder={`${client.phone_number}`}
                                     className="flex-1 h-10 rounded-l-none border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
                             </div>
