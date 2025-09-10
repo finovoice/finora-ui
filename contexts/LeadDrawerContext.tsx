@@ -120,13 +120,13 @@ export function LeadDrawerProvider({
     }
 
     const editableClient: EditableClient = {
-      ...(text != client.notes ? { notes: text } : {}),
-      ...(disposition && Object.keys(disposition).length ? { profile: disposition } : {}),
-      ...(plan && Object.keys(plan).length ? { plan: plan } : {}),
+      ...(text && text !== client.notes ? { notes: text } : {}),
+      ...(disposition && disposition.trim() ? { profile: disposition } : {}),
+      ...(plan && plan.trim() ? { plan: plan } : {}),
       lead_stage: stage,
-      risk: riskProfile,
-      pancard: pan,
-      dob: dob
+      ...(riskProfile && riskProfile.trim() ? { risk: riskProfile } : {}),
+      ...(pan && pan.trim() ? { pancard: pan } : {}),
+      ...(dob && dob.trim() ? { dob: dob } : {})
     }
 
     setSending(true)
