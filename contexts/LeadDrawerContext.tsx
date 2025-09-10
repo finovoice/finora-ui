@@ -99,7 +99,7 @@ export function LeadDrawerProvider({
     setStage(client.lead_stage ?? "LEAD")
     setDisposition(client.profile ?? "")
     setPlan(client.plan ?? "")
-    setDate(client.end_date ?? "")
+    setDate(client.dob ?? "")
     setContractUrl(null)
     setContractName(client.signed_contract_url ?? "")
     setRiskProfile(client.risk ?? "")
@@ -124,6 +124,9 @@ export function LeadDrawerProvider({
       ...(disposition && Object.keys(disposition).length ? { profile: disposition } : {}),
       ...(plan && Object.keys(plan).length ? { plan: plan } : {}),
       lead_stage: stage,
+      risk: riskProfile,
+      pancard: pan,
+      dob: date
     }
 
     setSending(true)
