@@ -48,8 +48,8 @@ export type LeadDrawerContextValue = {
   setAmount: (a: string) => void
   renewal: Renewal
   setRenewal: (r: Renewal) => void
-  date?: string
-  setDate: (d?: string) => void
+  dob?: string
+  setDob: (d?: string) => void
   text: string
   setText: (t: string) => void
   sending: boolean
@@ -90,7 +90,7 @@ export function LeadDrawerProvider({
   const [pan, setPan] = useState<string>("")
   const [amount, setAmount] = useState<string>("")
   const [renewal, setRenewal] = useState<Renewal>("Monthly")
-  const [date, setDate] = useState<string | undefined>(undefined)
+  const [dob, setDob] = useState<string | undefined>(undefined)
   const [text, setText] = useState<string>("")
   const [sending, setSending] = useState<boolean>(false)
 
@@ -99,7 +99,7 @@ export function LeadDrawerProvider({
     setStage(client.lead_stage ?? "LEAD")
     setDisposition(client.profile ?? "")
     setPlan(client.plan ?? "")
-    setDate(client.dob ?? "")
+    setDob(client.dob ?? "")
     setContractUrl(null)
     setContractName(client.signed_contract_url ?? "")
     setRiskProfile(client.risk ?? "")
@@ -126,7 +126,7 @@ export function LeadDrawerProvider({
       lead_stage: stage,
       risk: riskProfile,
       pancard: pan,
-      dob: date
+      dob: dob
     }
 
     setSending(true)
@@ -173,11 +173,11 @@ export function LeadDrawerProvider({
       showToast({ title: "Missing Plan Selection", description: "Please choose an investment plan.", type: "warning" })
       return
     }
-    if (!date) {
+    if (!dob) {
       showToast({ title: "Missing DOB", description: "Please select a start date for your investment.", type: "warning" })
       return
     }
-    if (!isValidDate(date)) {
+    if (!isValidDate(dob)) {
       showToast({ title: "Error in DOB", description: "Invalid date format or out-of-range values.", type: "error" })
       return
     }
@@ -249,8 +249,8 @@ export function LeadDrawerProvider({
       setAmount,
       renewal,
       setRenewal,
-      date,
-      setDate,
+      dob: dob,
+      setDob,
       text,
       setText,
       sending,
@@ -272,7 +272,7 @@ export function LeadDrawerProvider({
       pan,
       amount,
       renewal,
-      date,
+      dob,
       text,
       sending,
     ]

@@ -22,8 +22,8 @@ export default function OnboardTab() {
     setRiskProfile,
     pan,
     setPan,
-    date,
-    setDate,
+    dob,
+    setDob,
     sending,
     disposition,
     client,
@@ -97,7 +97,7 @@ export default function OnboardTab() {
           </div>
           <div className="space-y-1.5">
             <Label className="text-sm text-[#344054]">DOB <span className="text-red-500">*</span></Label>
-            <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder="yyyy-mm-dd" className="h-10 rounded-md border-[#e4e7ec]" />
+            <Input value={dob} onChange={(e) => setDob(e.target.value)} placeholder="yyyy-mm-dd" className="h-10 rounded-md border-[#e4e7ec]" />
           </div>
         </div>
         <div className="flex justify-end mt-4">
