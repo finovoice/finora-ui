@@ -145,8 +145,8 @@ export default function OnboardTab() {
       </div>
 
       <div className="border-t border-[#e4e7ec] pt-4">
-        <Button className="w-full" onClick={handleAddToClientsSubmit} disabled={sending}>
-          {sending ? 'Sending...' : ' Add to clients'}
+        <Button className="w-full" onClick={handleAddToClientsSubmit} disabled={sending || !isPlanDetailsValid()}>
+          {sending ? 'Sending...' : 'Add to clients'}
         </Button>
       </div>
     </div>

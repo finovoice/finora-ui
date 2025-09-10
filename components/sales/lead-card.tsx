@@ -1,4 +1,4 @@
-import { CalendarDays, Flame, ShieldCheck, UserRound, RefreshCw, MessageSquare, ShoppingBag, Snowflake, Sun, Minus, PhoneOff, Award, Medal, Trophy, Crown, Star } from 'lucide-react'
+import { CalendarDays, Flame, UserRound, MessageSquare, ShoppingBag, Snowflake, Sun, Minus, PhoneOff, Award, Medal, Trophy, Crown, Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import {Profile} from "@/constants/types";
 
@@ -79,7 +79,7 @@ const getTierColor = (tier: string) => {
   }
 }
 
-export default function LeadCard({ name, date, owner, hot = false, tier, profile }: LeadCardProps) {
+export default function LeadCard({ name, date, owner, tier, profile }: LeadCardProps) {
   const textRef = useRef<HTMLHeadingElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
