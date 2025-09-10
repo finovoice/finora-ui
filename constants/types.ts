@@ -93,7 +93,55 @@ export type ClientType = {
   is_converted_to_client: boolean
   created_at: string
   updated_at: string
+  // Contract signing related fields
+  original_document_url?: string
+  setu_document_id?: string
+  setu_signature_id?: string
+  setu_signature_status?: SignatureStatus
+  setu_signature_url?: string
+  setu_signed_document_url?: string
 }
+
+export type SignatureStatus = "sign_initiated" | "sign_in_progress" | "signed" | "pending" | "failed"
+
+export type ContractUploadResponse = {
+  id: string
+  phone_number: string
+  email: string
+  pancard: string
+  dob: string | null
+  organisation: number
+  assigned_rm: {
+    id: number
+    email: string
+    phone_number: string
+    type: string
+    is_admin: boolean
+    is_org_admin: boolean
+  }
+  profile: string
+  ekyc: string
+  risk: string
+  lead_stage: LeadStage
+  signed_contract_url: string
+  plan: string
+  start_date: string
+  end_date: string
+  is_converted_to_client: boolean
+  first_name: string
+  last_name: string
+  notes: string
+  original_document_url: string
+  setu_document_id: string
+  setu_signature_id: string
+  setu_signature_status: SignatureStatus
+  setu_signature_url: string
+  setu_signed_document_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type RefreshStatusResponse = ContractUploadResponse
 
 export type EditableClient = {
   first_name?: string
@@ -147,3 +195,16 @@ export type SubscriptionType = {
 export type LeadStage = "LEAD" | "CONTACTED" | "DOCUMENTED" | "AWAITING_PAYMENT";
 
 export type Profile = "HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND" | string;
+
+// Contract Upload and Signing Types
+export type SigningStatusResponse = ContractUploadResponse
+
+export type ContractUploadRequest = {
+  file: File
+  clientId: string
+}
+
+export type RefreshStatusRequest = {
+  requestId: string
+  clientId: string
+}

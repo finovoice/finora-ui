@@ -1,21 +1,20 @@
 "use client"
 
 import React from "react"
-import FileUpload from "@/components/file-upload"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useLeadDrawer } from "@/contexts/LeadDrawerContext"
+import { useContractSigning } from "@/hooks/useContractSigning"
 import { showToast } from "@/components/ui/toast-manager"
+import ContractUploader from "@/components/contracts/ContractUploader"
+import ClientCard from "@/components/contracts/ClientCard"
+import SigningActions from "@/components/contracts/SigningActions"
+import SigningStatus from "@/components/contracts/SigningStatus"
 
 export default function OnboardTab() {
   const {
-    contractUrl,
-    setContractUrl,
-    contractName,
-    setContractName,
-    setFile,
     plan,
     setPlan,
     riskProfile,
@@ -37,6 +36,20 @@ export default function OnboardTab() {
     handleAddToClientsSubmit,
   } = useLeadDrawer()
 
+  const {
+    isUploading,
+    isRefreshing,
+    contractData,
+    uploadedFile,
+    uploadContract,
+    refreshSigningStatus,
+    copySigningLink,
+    viewSignedDocument,
+    resetContract
+  } = useContractSigning()
+
+  console.log({contractData, client})
+
   const [isPlanSelectedSelectOpen, setIsPlanSelectedSelectOpen] = React.useState(false)
   const [isRiskProfileSelectOpen, setIsRiskProfileSelectOpen] = React.useState(false)
 
@@ -48,32 +61,61 @@ export default function OnboardTab() {
            dob && dob.trim() !== ''
   }
 
+  const handleFileUpload = async (file: File) => {
+    if (!client.id) {
+      showToast({ title: 'Error', description: 'Client ID is required', type: 'error' })
+      return
+    }
+    await uploadContract(file, client.id)
+  }
+
+  const handleSendForSigning = () => {
+    // The contract upload already initiates signing, so we just need to show success
+    showToast({ 
+      title: 'Sent for Signing', 
+      description: 'Contract has been sent for client signature', 
+      type: 'success' 
+    })
+  }
+
+  // Reset contract data when client changes
+  React.useEffect(() => {
+    resetContract()
+  }, [client.id, resetContract])
+
   return (
     <div className="space-y-6 px-5 py-5">
-      <div>
-        <div className="mb-2 text-sm font-medium text-[#344054]">Contract <span className="text-red-500">*</span></div>
-        <FileUpload
-          label=""
-          required
-          accept="application/pdf"
-          maxSize="20MB"
-          value={contractUrl}
-          fileName={contractName ?? undefined}
-          fileSize=""
-          showPreview={false}
-          onFileSelect={(file) => {
-            setContractName(file.name)
-            const url = URL.createObjectURL(file)
-            setContractUrl(url)
-            setFile(file)
-          }}
-          onFileDelete={() => {
-            setContractUrl(null)
-            setContractName(null)
-          }}
-        />
-      </div>
+      {/* Contract Upload Section */}
+      <ContractUploader
+        onFileUpload={handleFileUpload}
+        isUploading={isUploading}
+        uploadedFile={uploadedFile}
+        disabled={sending}
+      />
 
+      {/* Client Details Card - Show after successful upload */}
+      {contractData && (
+        <ClientCard client={contractData} />
+      )}
+
+      {/* Signing Actions - Show after upload */}
+      {contractData && (
+        <SigningActions
+          contractData={contractData}
+          isRefreshing={isRefreshing}
+          onSendForSigning={handleSendForSigning}
+          onCopyLink={copySigningLink}
+          onRefreshStatus={refreshSigningStatus}
+          onViewDocument={viewSignedDocument}
+        />
+      )}
+
+      {/* Signing Status Progress - Show after upload */}
+      {contractData && (
+        <SigningStatus contractData={contractData} />
+      )}
+
+      {/* Plan Details Section */}
       <div className="rounded-lg border border-[#e4e7ec] p-4">
         <div className="mb-3 text-sm font-medium text-[#344054]">Plan details</div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -115,6 +157,7 @@ export default function OnboardTab() {
         </div>
       </div>
 
+      {/* Payment Section */}
       <div className="rounded-lg border border-[#e4e7ec] p-4">
         <div className="mb-3 text-sm font-medium text-[#344054]">Payment</div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -144,6 +187,7 @@ export default function OnboardTab() {
         </div>
       </div>
 
+      {/* Add to Clients Button */}
       <div className="border-t border-[#e4e7ec] pt-4">
         <Button className="w-full" onClick={handleAddToClientsSubmit} disabled={sending || !isPlanDetailsValid()}>
           {sending ? 'Sending...' : 'Add to clients'}
