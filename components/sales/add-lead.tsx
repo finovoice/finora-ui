@@ -474,7 +474,7 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
                                         <li><span className="font-semibold">Last name*</span> - last name of the client</li>
                                         <li><span className="font-semibold">Email</span> - valid email fo the client (optional)</li>
                                         <li><span className="font-semibold">Phone number*</span> - add client's valid whatsapp number</li>
-                                        <li><span className="font-semibold">Assigned RM</span> - write name of RM which exactly matches the name added by you in the employee page; Admin's name will be added if left blank.</li>
+                                        <li><span className="font-semibold">Assigned RM</span> - write name of RM which exactly matches the name added by you in the employee page; Admin's name will be added if left blank. for example ( admin@finora.com )</li>
                                     </ol>
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm text-[#667085]">Or, download</p>
