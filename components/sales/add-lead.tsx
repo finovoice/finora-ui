@@ -433,13 +433,13 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
 
                         <div className="space-y-1">
                             <Label htmlFor="assigned-rm" className="text-sm font-medium text-[#344054] block">Assigned RM</Label>
-                            <Select defaultValue="1" onValueChange={setAssignedRM}>
+                            <Select defaultValue="admin@finora.com" onValueChange={setAssignedRM}>
                                 <SelectTrigger className="w-full h-10 border-[#d0d5dd] focus:ring-0 focus:ring-offset-0">
                                     <SelectValue placeholder="Select RM" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="1">admin@finora.com</SelectItem>
-                                    <SelectItem value="2">samir@gmail.com</SelectItem>
+                                    <SelectItem value="admin@finora.com">admin@finora.com</SelectItem>
+                                    <SelectItem value="samir@gmail.com">samir@gmail.com</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
