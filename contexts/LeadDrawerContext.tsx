@@ -143,12 +143,9 @@ export function LeadDrawerProvider({
   }
 
   async function handleAddToClientsSubmit() {
+      console.log("client.setu_signature_status : ", client.setu_signature_status)
     if (!lead) {
       showToast({ title: "Error", description: "Lead not found", type: "error" })
-      return
-    }
-    if (!file) {
-      showToast({ title: "No file selected", description: "Please Select a file", type: "warning" })
       return
     }
     if (!riskProfile) {
@@ -184,13 +181,9 @@ export function LeadDrawerProvider({
 
     setSending(true)
     try {
-      const upload = await uploadFileAPI(file, "invoice")
-      showToast({ title: "Success", description: "You file has been uploaded", type: "success" })
-
+      const startDate = new Date().toISOString().split("T")[0]
       const editedClient: EditableClient = {
-        signed_contract_url: upload.signed_url,
         pancard: pan,
-        start_date: `${new Date().toISOString().split("T")[0]}T00:00:00Z`,
         risk: riskProfile,
         plan: plan,
         is_converted_to_client: true,
@@ -203,7 +196,7 @@ export function LeadDrawerProvider({
         plan: "1",
         client: client.id,
         created_by: client.assigned_rm.id,
-        start_date: new Date().toISOString().split("T")[0],
+        start_date: startDate,
         end_date: getNextRenewalDate(renewal),
         amount_paid: amount,
         client_email: client.email,
