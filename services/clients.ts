@@ -1,6 +1,6 @@
 import { getRequestOptions, sendGetRequest, sendUpdateCreateRequest } from "@/services/index"
 import { BACKEND_URL } from "@/constants/configs"
-import { ClientType, EditableClient, LeadType, ContractUploadResponse, SigningStatusResponse } from "@/constants/types";
+import { ClientType, EditableClient, LeadType, SigningStatusResponse } from "@/constants/types";
 
 const CLIENT_API_SERVICE_URL = `${BACKEND_URL}/api/core/clients/`
 const BULK_CREATE_LEADS_API_SERVICE_URL = `${BACKEND_URL}/api/core/clients/bulk-create/`
@@ -36,7 +36,7 @@ export const bulkCreateLeadsAPI = async (leads: LeadType[]): Promise<any> => {
 }
 
 // Contract Upload and Signing APIs
-export const uploadContractAPI = async (file: File, clientId: string): Promise<ContractUploadResponse> => {
+export const uploadContractAPI = async (file: File, clientId: string): Promise<ClientType> => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('clientId', clientId)

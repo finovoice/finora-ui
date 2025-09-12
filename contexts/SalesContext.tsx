@@ -91,6 +91,7 @@ export type SalesContextValue = SalesState & {
   setSelectedLeadQuality: (qualities: LeadQuality[]) => void
   setSearchQuery: (query: string) => void
   resetFilters: () => void
+  setCurrentClient: (client?: ClientType) => void
 }
 
 const SalesContext = createContext<SalesContextValue | undefined>(undefined)
@@ -133,6 +134,7 @@ export function SalesProvider({ children }: { children: React.ReactNode }) {
   const setSelectedLeadQuality = useCallback((qualities: LeadQuality[]) => dispatch({ type: 'SET_SELECTED_LEAD_QUALITY', payload: qualities }), [])
   const setSearchQuery = useCallback((query: string) => dispatch({ type: 'SET_SEARCH_QUERY', payload: query }), [])
   const resetFilters = useCallback(() => dispatch({ type: 'RESET_FILTERS' }), [])
+  const setCurrentClient = useCallback((client?: ClientType) => dispatch({ type: 'SET_CURRENT_CLIENT', payload: client }), [])
 
   const value: SalesContextValue = useMemo(() => ({
     ...state,
@@ -145,6 +147,7 @@ export function SalesProvider({ children }: { children: React.ReactNode }) {
     setSelectedLeadQuality,
     setSearchQuery,
     resetFilters,
+    setCurrentClient,
   }), [state, refreshClients, openDrawerForLead, closeDrawer, toggleAddLead, toggleColumnCollapse])
 
   return (

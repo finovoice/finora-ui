@@ -2,14 +2,16 @@
 
 import { useState, useCallback } from 'react'
 import { uploadContractAPI, refreshSigningStatusAPI } from '@/services/clients'
-import { ContractUploadResponse, RefreshStatusResponse } from '@/constants/types'
+import { ClientType, RefreshStatusResponse } from '@/constants/types'
 import { showToast } from '@/components/ui/toast-manager'
+import { useSales } from '@/contexts/SalesContext'
 
-export function useContractSigning(onClientUpdate?: (updatedClient: ContractUploadResponse) => void) {
+export function useContractSigning(onClientUpdate?: (updatedClient: ClientType) => void) {
   const [isUploading, setIsUploading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [contractData, setContractData] = useState<ContractUploadResponse | null>(null)
+  const [contractData, setContractData] = useState<RefreshStatusResponse | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const { setCurrentClient } = useSales()
 
   const uploadContract = useCallback(async (file: File, clientId: string) => {
     if (!file || !clientId) {
@@ -24,10 +26,11 @@ export function useContractSigning(onClientUpdate?: (updatedClient: ContractUplo
     setIsUploading(true)
     try {
       const response = await uploadContractAPI(file, clientId)
-      setContractData(response)
+      // Update current client with the response from upload (response is ClientType)
+      setCurrentClient(response)
       setUploadedFile(file)
 
-      // Notify parent component of client update
+      // Notify parent component of client update if provided
       if (onClientUpdate) {
         onClientUpdate(response)
       }
@@ -48,7 +51,7 @@ export function useContractSigning(onClientUpdate?: (updatedClient: ContractUplo
     } finally {
       setIsUploading(false)
     }
-  }, [onClientUpdate])
+  }, [onClientUpdate, setCurrentClient])
 
   const refreshSigningStatus = useCallback(async (requestId: string, clientId: string) => {
     if (!requestId || !clientId) {
@@ -64,11 +67,6 @@ export function useContractSigning(onClientUpdate?: (updatedClient: ContractUplo
     try {
       const response = await refreshSigningStatusAPI(requestId, clientId)
       setContractData(response)
-
-      // Notify parent component of client update
-      if (onClientUpdate) {
-        onClientUpdate(response)
-      }
 
       showToast({ 
         title: 'Status Updated', 
