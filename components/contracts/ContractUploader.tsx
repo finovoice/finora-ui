@@ -2,6 +2,7 @@
 
 import React from 'react'
 import FileUpload from '@/components/file-upload'
+import SignedUrlPreview from './SignedUrlPreview'
 import { Button } from '@/components/ui/button'
 import { Upload } from 'lucide-react'
 import LoadingSpinner from "@/components/ui/loading-spinner";
@@ -9,14 +10,14 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 interface ContractUploaderProps {
   onFileUpload: (file: File) => void
   isUploading: boolean
-  uploadedFile: File | null
+  uploadedFileUrl: String | undefined
   disabled?: boolean
 }
 
 export default function ContractUploader({ 
   onFileUpload, 
   isUploading, 
-  uploadedFile, 
+  uploadedFileUrl,
   disabled = false 
 }: ContractUploaderProps) {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
@@ -36,7 +37,12 @@ export default function ContractUploader({
   }
 
   const fileUrl = selectedFile ? URL.createObjectURL(selectedFile) : null
-  const fileName = selectedFile?.name || uploadedFile?.name
+  const fileName = selectedFile?.name
+
+  // Check if we have an uploaded file URL (signed URL from backend)
+  const hasUploadedFile = uploadedFileUrl && !selectedFile
+
+    console.log({ fileName, hasUploadedFile, uploadedFileUrl })
 
   return (
     <div className="space-y-4">
@@ -44,21 +50,30 @@ export default function ContractUploader({
         <div className="mb-2 text-sm font-medium text-[#344054]">
           Contract Document <span className="text-red-500">*</span>
         </div>
-        <FileUpload
-          label=""
-          required
-          accept="application/pdf"
-          maxSize="20MB"
-          value={fileUrl}
-          fileName={fileName}
-          fileSize={selectedFile ? `${Math.round(selectedFile.size / 1024)} KB` : ''}
-          showPreview={false}
-          onFileSelect={handleFileSelect}
-          onFileDelete={handleFileDelete}
-        />
+
+        {hasUploadedFile ? (
+          <SignedUrlPreview 
+            url={uploadedFileUrl.toString()}
+            fileName="Contract Document.pdf"
+            className="w-full"
+          />
+        ) : (
+          <FileUpload
+            label=""
+            required
+            accept="application/pdf"
+            maxSize="20MB"
+            value={fileUrl}
+            fileName={fileName}
+            fileSize={selectedFile ? `${Math.round(selectedFile.size / 1024)} KB` : ''}
+            showPreview={false}
+            onFileSelect={handleFileSelect}
+            onFileDelete={handleFileDelete}
+          />
+        )}
       </div>
 
-      {selectedFile && !uploadedFile && (
+      {selectedFile && (
         <div className="flex justify-end">
           <Button 
             onClick={handleUpload} 

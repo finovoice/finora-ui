@@ -86,17 +86,12 @@ export default function OnboardTab() {
       <ContractUploader
         onFileUpload={handleFileUpload}
         isUploading={isUploading}
-        uploadedFile={uploadedFile}
+        uploadedFileUrl={client?.original_document_url}
         disabled={sending}
       />
 
-      {/*/!* Client Details Card - Show when client has contract data or after successful upload *!/*/}
-      {/*{(client.setu_signature_status || contractData) && (*/}
-      {/*  <ClientCard client={client} />*/}
-      {/*)}*/}
-
       {/* Signing Actions - Show when client has signing data or after upload */}
-      {(client.setu_signature_status || contractData) && (
+      {(client.setu_signature_status) && (
         <SigningActions
           client={client}
           isRefreshing={isRefreshing}
@@ -108,7 +103,7 @@ export default function OnboardTab() {
       )}
 
       {/* Signing Status Progress - Show when client has signing data or after upload */}
-      {(client.setu_signature_status || contractData) && (
+      {(client.setu_signature_status) && (
         <SigningStatus client={client} />
       )}
 
