@@ -55,7 +55,6 @@ export function ClientsProvider({ children }: { children: React.ReactNode }) {
   const refreshClients = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true })
     try {
-      await startServerAPI();
       const responseData = await getClientsAPI("?is_converted_to_client=true");
       dispatch({ type: 'SET_CLIENTS', payload: responseData.data })
     } catch (e) {
