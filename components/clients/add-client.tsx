@@ -121,16 +121,6 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
             return;
         }
 
-        // if (nameParts.length < 2 || lastName.length < 2) {
-        //     showToast({
-        //         title: 'Validation Error',
-        //         description: 'Both first name and last name are required, and each must be at least 2 characters long.',
-        //         type: 'warning',
-        //         duration: 3000
-        //     });
-        //     return;
-        // }
-
         if (!isValidIndianName(trimmedName)) {
             showToast({
                 title: 'Validation Error',
@@ -577,7 +567,7 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
                                         <li><span className="font-semibold">Phone number *</span> - add client's valid whatsapp number</li>
                                         <li><span className="font-semibold">Plan *</span> - write the plan subscribed which exactly matches your plans added in the plans page</li>
                                         <li><span className="font-semibold">Plan expiry date </span>write when plan expires in YYYY/MM/DD format; a day of 30 days from today will be added if left blank</li>
-                                        <li><span className="font-semibold">Assigned RM</span> - write name of RM which exactly matches the name added by you in the employee page; Admin's name will be added if left blank.</li>
+                                        <li><span className="font-semibold">Assigned RM</span>  - write name of RM which exactly matches the name added by you in the employee page; Admin's name will be added if left blank. for example ( admin@finora.com )</li>
                                         <li><span className="font-semibold">Risk Profile *</span>- Choose one of the three options from "conservative", "high", "aggressive"</li>
                                     </ol>
                                     <div className="flex items-center gap-2">
