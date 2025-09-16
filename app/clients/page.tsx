@@ -342,7 +342,7 @@ const filteredClients = useMemo(() => {
                       {/* Client */}
                       <div className="min-w-0">
                         <div className="truncate text-[14px] text-[#1f2937]">{displayName(c)}</div>
-                        {!c.signed_contract_url && (
+                        {!c.setu_signed_document_url && (
                           <div className="mt-1 inline-flex items-center gap-1 text-xs text-[#b54708]">
                             <AlertTriangle className="h-3.5 w-3.5" />
                             <span>No contract</span>
