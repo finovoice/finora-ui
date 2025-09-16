@@ -2,7 +2,6 @@
 
 import React from "react"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ToolbarBtn from "./ToolbarBtn"
 import { Bold, Heading, Italic, List, ListOrdered, Quote } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,7 +19,14 @@ export default function DetailsTab() {
     stage,
     handleEditClientSubmit,
   } = useLeadDrawer()
-  const [isDispositionSelectOpen, setIsDispositionSelectOpen] = React.useState(false)
+
+  const dispositionOptions = [
+    { value: "HOT", label: "Hot", bgColor: "bg-red-50", textColor: "text-red-700", borderColor: "border-red-200" },
+    { value: "WARM", label: "Warm", bgColor: "bg-orange-50", textColor: "text-orange-700", borderColor: "border-orange-200" },
+    { value: "COLD", label: "Cold", bgColor: "bg-blue-50", textColor: "text-blue-700", borderColor: "border-blue-200" },
+    { value: "NEUTRAL", label: "Neutral", bgColor: "bg-gray-50", textColor: "text-gray-700", borderColor: "border-gray-200" },
+    { value: "DND", label: "DND", bgColor: "bg-purple-50", textColor: "text-purple-700", borderColor: "border-purple-200" }
+  ]
 
   const isSaveDisabled = sending || (disposition == '' && plan == '' && client?.lead_stage == stage && text == '')
 
@@ -29,16 +35,21 @@ export default function DetailsTab() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label className="text-sm text-[#344054]">Lead disposition</Label>
-          <Select open={isDispositionSelectOpen} onOpenChange={setIsDispositionSelectOpen} value={disposition} onValueChange={setDisposition}>
-            <SelectTrigger className="h-10 w-full rounded-md border-[#e4e7ec]"><SelectValue placeholder="Select one" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="HOT">Hot</SelectItem>
-              <SelectItem value="WARM">Warm</SelectItem>
-              <SelectItem value="COLD">Cold</SelectItem>
-              <SelectItem value="NEUTRAL">Neutral</SelectItem>
-              <SelectItem value="DND">DND</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {dispositionOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setDisposition(option.value)}
+                className={`h-8 px-3 text-xs border rounded-md transition-all ${
+                  disposition === option.value
+                    ? `${option.bgColor} ${option.textColor} ${option.borderColor}`
+                    : "border-[#e4e7ec] bg-white text-[#344054] hover:bg-gray-50"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
