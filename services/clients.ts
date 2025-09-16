@@ -25,8 +25,19 @@ export const importLeadAPI = async (lead: LeadType): Promise<ClientType> => {
   return await sendUpdateCreateRequest(CLIENT_API_SERVICE_URL, requestOptions, "clients") as ClientType
 }
 
+
+export const importClientAPI = async (client: EditableClient): Promise<ClientType> => {
+  const requestOptions = await getRequestOptions(client, "POST")
+  return await sendUpdateCreateRequest(CLIENT_API_SERVICE_URL, requestOptions, "clients") as ClientType
+}
+
 export const editLeadAPI = async (lead: EditableClient, id: string): Promise<ClientType> => {
   const requestOptions = await getRequestOptions(lead, "PATCH")
+  return await sendUpdateCreateRequest(CLIENT_API_SERVICE_URL + id + '/', requestOptions, "clients") as ClientType
+}
+
+export const editCientAPI = async (client: EditableClient, id: string): Promise<ClientType> => {
+  const requestOptions = await getRequestOptions(client, "PATCH")
   return await sendUpdateCreateRequest(CLIENT_API_SERVICE_URL + id + '/', requestOptions, "clients") as ClientType
 }
 
@@ -60,4 +71,9 @@ export const uploadContractAPI = async (file: File, clientId: string): Promise<C
 export const refreshSigningStatusAPI = async (requestId: string, clientId: string): Promise<SigningStatusResponse> => {
   const url = `${BACKEND_URL}/api/core/clients/refresh-status/?requestId=${requestId}&clientId=${clientId}`
   return await sendGetRequest(url, "signing status")
+}
+
+export const bulkCreateClientsAPI = async (leads: EditableClient[]): Promise<any> => {
+  const requestOptions = await getRequestOptions(leads, "POST")
+  return await sendUpdateCreateRequest(BULK_CREATE_LEADS_API_SERVICE_URL, requestOptions, "bulk clients")
 }

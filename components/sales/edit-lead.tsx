@@ -29,6 +29,15 @@ export default function EditLead({ id, client, open, setOpen, refreshClients }: 
     const [assignedRM, setAssignedRM] = useState<string>("1"); // Default value
     const [countryCode, setCountryCode] = useState("IND (+91)");
 
+    useEffect(() => {
+        if (open && client) {
+            setFirstName(client.first_name || "");
+            setLastName(client.last_name || "");
+            setEmail(client.email || "");
+            setPhoneNumber(client.phone_number || "");
+            setAssignedRM(client.assigned_rm?.id || ""); // Assuming assigned_rm has an id
+        }
+    }, [open, client]);
 
     function isValidEmail(email: string) {
         return /\S+@\S+\.\S+/.test(email);
@@ -94,11 +103,11 @@ export default function EditLead({ id, client, open, setOpen, refreshClients }: 
         }
 
         editedLead = {
-            ...(firstName ? { first_name: firstName } : {}),
-            ...(lastName ? { last_name: lastName } : {}),
-            ...(email ? { email } : {}),
-            ...(assignedRM ? { assigned_rm: assignedRM } : {}),
-            ...(phoneNumber ? { phone_number: phoneNumber } : {}),
+            ...(firstName !== client.first_name ? { first_name: firstName } : {}),
+            ...(lastName !== client.last_name ? { last_name: lastName } : {}),
+            ...(email !== client.email ? { email } : {}),
+            ...(assignedRM !== client.assigned_rm?.id ? { assigned_rm: assignedRM } : {}),
+            ...(phoneNumber !== client.phone_number ? { phone_number: phoneNumber } : {}),
         };
 
         setSending(true);
@@ -110,10 +119,8 @@ export default function EditLead({ id, client, open, setOpen, refreshClients }: 
                 type: 'success'
             })
             refreshClients();
-
         }
         catch (e) {
-            console.log('error :', e)
             showToast({
                 title: "Error",
                 description: "Lead could not be created!",
@@ -130,14 +137,6 @@ export default function EditLead({ id, client, open, setOpen, refreshClients }: 
 
         }
     }
-    useEffect(() => {
-        if (open && client) {
-            setFirstName(client.first_name || "");
-            setLastName(client.last_name || "");
-            setEmail(client.email || "");
-            setPhoneNumber(client.phone_number || "");
-        }
-    }, [open, client]);
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="max-w-md p-0 overflow-hidden rounded-xl">
@@ -179,7 +178,7 @@ export default function EditLead({ id, client, open, setOpen, refreshClients }: 
 
                     <div className="space-y-1 px-6 pb-6">
                         <Label htmlFor="assigned-rm" className="text-sm font-medium text-[#344054] block">Assigned RM</Label>
-                        <Select defaultValue="admin@finora.com" onValueChange={setAssignedRM}>
+                        <Select value={String(assignedRM)} onValueChange={setAssignedRM}>
                             <SelectTrigger className="w-full h-10 border-[#d0d5dd] focus:ring-0 focus:ring-offset-0">
                                 <SelectValue placeholder="Select RM" />
                             </SelectTrigger>

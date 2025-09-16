@@ -189,7 +189,8 @@ export type SubscriptionType = {
   updated_at?: string;
   client_email: string;
   plan_name: string;
-  plan_type?: "ELITE" | "STANDARD" | "PREMIUM"; // adjust as needed
+  renewal_duration?: string; // Added renewal_duration
+  plan_type?: string; // "ELITE" | "STANDARD" | "PREMIUM"; adjust as needed
 };
 
 export type LeadStage = "LEAD" | "CONTACTED" | "DOCUMENTED" | "AWAITING_PAYMENT";

@@ -5,46 +5,43 @@ import * as React from "react"
 interface ExpiryGaugeProps {
   daysLeft: number
   totalDays: number
+  text?: string
 }
 
-export default function ExpiryGauge({ daysLeft, totalDays }: ExpiryGaugeProps) {
+export default function ExpiryGauge({ daysLeft, totalDays, text }: ExpiryGaugeProps) {
   const radius = 56
   const stroke = 12
   const size = radius * 2 + stroke
   const normalizedRadius = radius
-  const circumference = 2 * Math.PI * normalizedRadius
+  const circumference = Math.PI * normalizedRadius // Half circle circumference
   const elapsed = Math.max(totalDays - daysLeft, 0)
   const progress = Math.min(Math.max(elapsed / totalDays, 0), 1)
   const strokeDashoffset = circumference * (1 - progress)
 
   return (
-    <div className="flex items-center gap-4 rounded-lg bg-[#f9fafb] px-4 py-3">
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
+    <div className="relative flex items-center gap-4 rounded-lg px-6 ml-8 py-3">
+      <svg width={size} height={size / 2 + stroke} className="rotate-0">
+        <path
+          d={`M ${stroke / 2} ${size / 2} A ${normalizedRadius} ${normalizedRadius} 0 0 1 ${size - stroke / 2} ${size / 2}`}
           stroke="#E5E7EB"
           fill="transparent"
           strokeWidth={stroke}
-          r={normalizedRadius}
-          cx={size / 2}
-          cy={size / 2}
           strokeLinecap="round"
           opacity={0.8}
         />
-        <circle
+        <path
+          d={`M ${stroke / 2} ${size / 2} A ${normalizedRadius} ${normalizedRadius} 0 0 1 ${size - stroke / 2} ${size / 2}`}
           stroke="#7F56D9"
           fill="transparent"
           strokeWidth={stroke}
-          r={normalizedRadius}
-          cx={size / 2}
-          cy={size / 2}
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
         />
       </svg>
-      <div className="text-right">
-        <div className="text-xs text-[#667085]">Expires in</div>
-        <div className="text-2xl font-semibold text-[#101828]">{daysLeft} days</div>
+      <div className="absolute flex flex-col items-center top-10 left-12">
+        <div className="text-[0.6rem] text-[#667085]">Expires in</div>
+        <div className="text-lg -mt-1 font-semibold text-[#101828]">{daysLeft} days</div>
       </div>
     </div>
   )

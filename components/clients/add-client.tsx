@@ -3,15 +3,15 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { useState, useRef, useEffect } from "react"; // Added useEffect
-import { X, CheckCircle2, XCircle } from "lucide-react"; // Added CheckCircle2 and XCircle
+import { X, CheckCircle2, XCircle, Calendar } from "lucide-react"; // Added CheckCircle2 and XCircle
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Switch } from "../ui/switch";
 import { showToast } from '../ui/toast-manager';
-import { importLeadAPI, bulkCreateLeadsAPI } from "@/services/clients"; // Import bulkCreateLeadsAPI
-import { LeadType } from "@/constants/types";
+import { importLeadAPI, bulkCreateLeadsAPI, importClientAPI, bulkCreateClientsAPI } from "@/services/clients"; // Import bulkCreateLeadsAPI
+import { EditableClient, LeadType } from "@/constants/types";
 import { uploadFileAPI } from "@/services/upload"; // Import uploadFileAPI
 import { AxiosProgressEvent } from "axios"; // Import AxiosProgressEvent
 import Papa from 'papaparse'; // Import PapaParse
@@ -23,34 +23,59 @@ type Props = {
     refreshClients: () => void
 }
 
-export default function AddLead({ open, setOpen, refreshClients }: Props) {
+export default function AddClient({ open, setOpen, refreshClients }: Props) {
     const [sending, setSending] = useState<boolean>(false);
     const [addContinuously, setAddContinuously] = useState<boolean>(false);
-    const [firstName, setFirstName] = useState<string>("");
-    const [lastName, setLastName] = useState<string>("");
+    const [name, setName] = useState<string>("");
     const [email, setEmail] = useState<string>("");
     const [phoneNumber, setPhoneNumber] = useState<string>("");
-    const [assignedRM, setAssignedRM] = useState<string>("1"); // Default value
+    const [assigned_RM, setAssigned_RM] = useState<string>("1"); // Default value
     const [countryCode, setCountryCode] = useState("IND (+91)");
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [plan, setPlan] = useState<string>("")
+    const [date, setDate] = useState<string>("")
+
 
     // New state variables for bulk upload UI
     const [uploadState, setUploadState] = useState<'initial' | 'warning' | 'error'>('initial');
-    const [leadsToProcess, setLeadsToProcess] = useState<LeadType[]>([]);
+    const [clientsToProcess, setClientsToProcess] = useState<EditableClient[]>([]);
     const [validationErrorsCount, setValidationErrorsCount] = useState<number>(0);
+    const [isPlanSelectedSelectOpen, setIsPlanSelectedSelectOpen] = useState(false);
+    const [risk, setRisk] = useState<string>()
+
 
     useEffect(() => {
         if (!open) {
             // Reset all bulk upload related states when the dialog closes
             setUploadState('initial');
-            setLeadsToProcess([]);
+            setClientsToProcess([]);
             setValidationErrorsCount(0);
             setSelectedFile(null);
             fileReset();
         }
     }, [open]);
+
+    const isValidDate = (dateStr: string): boolean => {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(dateStr)) return false;
+
+        const [yearStr, monthStr, dayStr] = dateStr.split("-");
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+        const day = parseInt(dayStr, 10);
+
+        if ((year < 1925 || year > 2007)) return false;
+
+        if (month < 1 || month > 12) return false;
+
+        const isValidDay = (d: number, m: number, y: number): boolean => {
+            const daysInMonth = new Date(y, m, 0).getDate();
+            return d >= 1 && d <= daysInMonth;
+        };
+        return isValidDay(day, month, year);
+    };
 
     function isValidIndianName(name: string): boolean {
         const regex = /^[A-Za-z\s\-]+$/;
@@ -71,46 +96,52 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
     }
 
     async function handleSubmit() {
-        if (!firstName.trim()) {
+        const trimmedName = name.trim();
+        const nameParts = trimmedName.split(/\s+/).filter(part => part.length > 0);
+
+        if (!trimmedName) {
             showToast({
                 title: 'Validation Error',
-                description: 'First name is required.',
+                description: 'Name is required.',
                 type: 'warning',
                 duration: 3000
             });
             return;
-        } else {
-            const validName = isValidIndianName(firstName.trim())
-            if (!validName) {
-                showToast({
-                    title: 'Validation Error',
-                    description: 'First name is invalid.',
-                    type: 'warning',
-                    duration: 3000
-                });
-                return
-            }
         }
-        if (!lastName.trim()) {
+
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ');
+
+        if (firstName.length < 2) {
             showToast({
                 title: 'Validation Error',
-                description: 'Last name is required.',
+                description: 'First name must be at least 2 characters long.',
                 type: 'warning',
                 duration: 3000
             });
             return;
-        } else {
-            const validName = isValidIndianName(lastName.trim())
-            if (!validName) {
-                showToast({
-                    title: 'Validation Error',
-                    description: 'Last name is invalid.',
-                    type: 'warning',
-                    duration: 3000
-                });
-                return
-            }
         }
+
+        if (nameParts.length < 2 || lastName.length < 2) {
+            showToast({
+                title: 'Validation Error',
+                description: 'Both first name and last name are required, and each must be at least 2 characters long.',
+                type: 'warning',
+                duration: 3000
+            });
+            return;
+        }
+
+        if (!isValidIndianName(trimmedName)) {
+            showToast({
+                title: 'Validation Error',
+                description: 'Name contains invalid characters.',
+                type: 'warning',
+                duration: 3000
+            });
+            return;
+        }
+
         if (email.trim() && !isValidEmail(email)) {
             showToast({
                 title: 'Validation Error',
@@ -129,21 +160,65 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
             });
             return;
         }
-        const lead: LeadType = {
+        if (!plan) {
+            showToast({
+                title: 'Validation Error',
+                description: 'Plan has not been selected.',
+                type: 'warning',
+                duration: 3000
+            });
+            return;
+        }
+
+        if (!date) {
+            showToast({
+                title: 'Validation Error',
+                description: 'Date has not been set.',
+                type: 'warning',
+                duration: 3000
+            });
+            return;
+        } else {
+            const validDate = isValidDate(date)
+            if (!validDate) {
+                showToast({
+                    title: 'Validation Error',
+                    description: 'Date has not been set.',
+                    type: 'warning',
+                    duration: 3000
+                });
+                return;
+            }
+        }
+
+        if (!risk) {
+            showToast({
+                title: 'Validation Error',
+                description: 'Risk has not been set.',
+                type: 'warning',
+                duration: 3000
+            });
+            return;
+        }
+
+        const lead: EditableClient = {
             first_name: firstName,
             last_name: lastName,
             phone_number: phoneNumber,
-            email: email,
-            assigned_rm: assignedRM,
+            risk: risk,
+            assigned_rm: assigned_RM,
             organisation: 1,
+            dob: date,
+            is_converted_to_client: true,
         }
         setSending(true);
         try {
-            const response = await importLeadAPI(lead)
+            const response = await importClientAPI(lead)
             showToast({
                 title: "Success",
                 description: "Lead Created!",
-                type: 'success'
+                type: 'success',
+                duration: 4000
             })
             refreshClients();
         }
@@ -157,6 +232,13 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
         finally {
             setSending(false);
             addContinuously ? setOpen(true) : setOpen(false);
+            setName("");
+            setPhoneNumber("")
+            setPlan("")
+            setDate("")
+            setAssigned_RM("1")
+            setRisk("")
+
         }
     }
 
@@ -182,8 +264,8 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
     };
 
     const handleDownloadCSV = () => {
-        const headers = ['phone_number', 'email', 'assigned_rm', 'first_name', 'last_name'];
-        downloadCSV(headers, 'leads_template.csv');
+        const headers = ['Name', 'Country Code', 'Phone Number', 'Plan', 'Plan expiry date', 'Assigned RM', 'Risk Profile'];
+        downloadCSV(headers, 'clients_template.csv');
     };
 
     const handleUploadCSV = async () => {
@@ -224,25 +306,24 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
                         return;
                     }
 
-                    // Map parsed data to LeadType and perform client-side validation for warning screen
+                    // Map parsed data to EditableClient and perform client-side validation for warning screen
                     let currentValidationErrorsCount = 0;
-                    const validLeads: LeadType[] = [];
+                    const validClients: EditableClient[] = [];
 
                     for (const row of parsedData) {
                         let rowHasError = false;
-                        const firstName = row['first_name']?.trim();
-                        const lastName = row['last_name']?.trim();
-                        const email = row['email']?.trim();
-                        const phoneNumber = row['phone_number']?.trim();
-                        const assignedRM = row['assigned_rm']?.trim() || "1"; // Default to "1" if not provided
+                        const name = row['Name']?.trim();
+                        const countryCode = row['Country Code']?.trim();
+                        const phoneNumber = row['Phone Number']?.trim();
+                        const planData = row['Plan']?.trim();
+                        const planExpiryDate = row['Plan expiry date']?.trim();
+                        const assignedRM = row['Assigned RM']?.trim() || '1';
+                        const riskProfile = row['Risk Profile']?.trim();
 
-                        if (!firstName || !lastName || !phoneNumber) {
+                        if (!name || !planData || !phoneNumber || !riskProfile) {
                             rowHasError = true;
                         }
                         if (!isValidIndianPhone(phoneNumber)) {
-                            rowHasError = true;
-                        }
-                        if (email && !isValidEmail(email)) {
                             rowHasError = true;
                         }
 
@@ -250,32 +331,34 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
                             currentValidationErrorsCount++;
                         }
 
-                        const lead: LeadType = {
-                            first_name: firstName || "",
-                            last_name: lastName || "",
-                            email: email || "",
+                        const client: EditableClient = {
+                            first_name: name?.split(' ')[0] || "",
+                            last_name: name?.split(' ').slice(1).join(' ') || "",
                             phone_number: phoneNumber || "",
                             assigned_rm: assignedRM,
+                            plan: planData?.toUpperCase() || "",
+                            risk: riskProfile?.toUpperCase() || "",
+                            end_date: planExpiryDate || "",
                             organisation: 1,
+                            is_converted_to_client: true
                         };
 
                         if (!rowHasError) {
-                            validLeads.push(lead);
+                            validClients.push(client);
                         }
                     }
 
                     if (currentValidationErrorsCount > 0) {
                         setValidationErrorsCount(currentValidationErrorsCount);
-                        setLeadsToProcess(validLeads); // Store ONLY valid leads for processing
+                        setClientsToProcess(validClients); // Store ONLY valid clients for processing
                         setUploadState('warning');
                         setSending(false);
                         setSelectedFile(null);
                         fileReset();
                         return;
                     }
-
-                    // If no client-side validation errors, proceed to API call with all leads
-                    await processLeads(validLeads);
+                    // If no client-side validation errors, proceed to API call with valid clients
+                    await processClients(validClients);
                 },
                 error: (error) => {
                     showToast({
@@ -300,29 +383,29 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
         }
     };
 
-    const processLeads = async (leads: LeadType[]) => {
+    const processClients = async (clients: EditableClient[]) => {
         setSending(true);
         try {
             showToast({
-                title: 'Importing Leads...',
+                title: 'Importing Clients...',
                 type: 'info',
                 duration: 4000,
             });
-            const response = await bulkCreateLeadsAPI(leads);
+            const response = await bulkCreateClientsAPI(clients);
 
             if (response.success.length === 0) {
                 setUploadState('error');
             } else {
                 showToast({
                     title: "Success",
-                    description: `${response.success.length} leads imported successfully.`,
+                    description: `${response.success.length} clients imported successfully.`,
                     type: 'success',
                     duration: 10000,
                 });
                 if (response.failed.length > 0) {
                     showToast({
                         title: "Failed",
-                        description: `${response.failed.length} leads failed to import.`,
+                        description: `${response.failed.length} clients failed to import.`,
                         type: 'warning',
                         duration: 10000,
                     });
@@ -356,7 +439,7 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
 
     const handleBackFromWarning = () => {
         setUploadState('initial');
-        setLeadsToProcess([]);
+        setClientsToProcess([]);
         setValidationErrorsCount(0);
         setSelectedFile(null);
         fileReset();
@@ -364,13 +447,13 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
 
     const handleProceedFromWarning = async () => {
         // Do NOT reset UI state to 'initial' here. Keep 'warning' until API response.
-        await processLeads(leadsToProcess);
+        await processClients(clientsToProcess);
     };
 
     const handleOkFromError = () => {
         setOpen(false); // Close the dialog
         setUploadState('initial');
-        setLeadsToProcess([]);
+        setClientsToProcess([]);
         setValidationErrorsCount(0);
         setSelectedFile(null);
         fileReset();
@@ -378,7 +461,7 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
 
     const handleBackFromError = () => {
         setUploadState('initial');
-        setLeadsToProcess([]);
+        setClientsToProcess([]);
         setValidationErrorsCount(0);
         setSelectedFile(null);
         fileReset();
@@ -386,9 +469,9 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="max-w-md p-0 overflow-hidden rounded-xl">
+            <DialogContent className="max-w-3xl w-3xl p-0 overflow-hidden rounded-xl">
                 <DialogHeader className="border-b border-[#e4e7ec] px-6 py-4 flex flex-row items-center justify-between">
-                    <DialogTitle className="text-md font-medium text-[#101828]">Add lead(s)</DialogTitle>
+                    <DialogTitle className="text-md font-medium text-[#101828]">Add clients(s)</DialogTitle>
                 </DialogHeader>
                 <Tabs defaultValue="manual" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 h-auto bg-white p-0 border-b border-[#e4e7ec] rounded-none">
@@ -398,17 +481,10 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
                     <TabsContent value="manual" className="p-6 space-y-5">
                         <div className="grid grid-cols-2 gap-4 ">
                             <div>
-                                <Label htmlFor="first-name" className="text-sm font-medium text-[#344054] mb-1 block">First name <span className="text-red-500">*</span></Label>
-                                <Input id="first-name" placeholder="First name" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                                <Label htmlFor="first-name" className="text-sm font-medium text-[#344054] mb-1 block">Name <span className="text-red-500">*</span></Label>
+                                <Input id="first-name" placeholder="Name" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={name} onChange={(e) => setName(e.target.value)} />
                             </div>
-                            <div>
-                                <Label htmlFor="last-name" className="text-sm font-medium text-[#344054] mb-1 block">Last name <span className="text-red-500">*</span></Label>
-                                <Input id="last-name" placeholder="Last name" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-                            </div>
-                            <div>
-                                <Label htmlFor="email" className="text-sm font-medium text-[#344054] mb-1 block">Email</Label>
-                                <Input id="email" placeholder="olivia.rhye@email.com" className="h-10 border-[#d0d5dd] focus-visible:ring-0 focus-visible:ring-offset-0" value={email} onChange={(e) => setEmail(e.target.value)} />
-                            </div>
+
                             <div>
                                 <Label htmlFor="phone-number" className="text-sm font-medium text-[#344054] mb-1 block">Phone number <span className="text-red-500">*</span></Label>
                                 <div className="flex">
@@ -425,20 +501,51 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
                                         value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
                                 </div>
                             </div>
+
+                            <div className="space-y-1.5 ">
+                                <Label className="text-sm text-[#344054]">Selected plan <span className="text-red-500">*</span></Label>
+                                <Select open={isPlanSelectedSelectOpen} onOpenChange={setIsPlanSelectedSelectOpen} value={plan} onValueChange={setPlan}>
+                                    <SelectTrigger className="h-10 rounded-md border-[#e4e7ec] w-full"><SelectValue placeholder="Elite" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="STANDARD">Standard</SelectItem>
+                                        <SelectItem value="PREMIUM">Premium</SelectItem>
+                                        <SelectItem value="ELITE">Elite</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1.5 relative">
+                                <Label className="text-sm text-[#344054]">DOB <span className="text-red-500">*</span></Label>
+                                <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder={`      yyyy-mm-dd`} className="h-10 rounded-md border-[#e4e7ec]" />
+                                {date === '' && <Calendar className="absolute left-3 top-20/38 text-gray-400 size-4" />}
+                            </div>
+
+
                         </div>
 
-                        <div className="space-y-1">
-                            <Label htmlFor="assigned-rm" className="text-sm font-medium text-[#344054] block">Assigned RM</Label>
-                            <Select defaultValue="admin@finora.com" onValueChange={setAssignedRM}>
-                                <SelectTrigger className="w-full h-10 border-[#d0d5dd] focus:ring-0 focus:ring-offset-0">
-                                    <SelectValue placeholder="Select RM" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="admin@finora.com">admin@finora.com</SelectItem>
-                                    <SelectItem value="samir@gmail.com">samir@gmail.com</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div className="flex flex-row gap-4 justify-between w-full">
+                            <div className="space-y-1 w-full">
+                                <Label htmlFor="assigned-rm" className="text-sm font-medium text-[#344054] block">Assigned RM</Label>
+                                <Select defaultValue="1" onValueChange={setAssigned_RM}>
+                                    <SelectTrigger className="w-full h-10 border-[#d0d5dd] focus:ring-0 focus:ring-offset-0">
+                                        <SelectValue placeholder="Select RM" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="1">admin@finora.com</SelectItem>
+                                        <SelectItem value="2">samir@gmail.com</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col space-y-1.5">
+                                <Label className="text-sm text-[#344054]">Risk <span className="text-red-500">*</span></Label>
+                                <div className="flex gap-2">
+                                    <Button type="button" variant={risk === 'CONSERVATIVE' ? 'default' : 'outline'} onClick={() => setRisk('CONSERVATIVE')}>Conservative</Button>
+                                    <Button type="button" variant={risk === 'HIGH' ? 'default' : 'outline'} onClick={() => setRisk('HIGH')}>High</Button>
+                                    <Button type="button" variant={risk === 'AGGRESSIVE' ? 'default' : 'outline'} onClick={() => setRisk('AGGRESSIVE')}>Aggressive</Button>
+                                </div>
+                            </div>
                         </div>
+
+
                         <div className="border-t border-[#e4e7ec] px-6 -mb-2 pt-6  flex flex-col gap-4 items-center justify-between">
                             <Button
                                 type="button"
@@ -466,11 +573,13 @@ export default function AddLead({ open, setOpen, refreshClients }: Props) {
                                     <h3 className="text-md font-medium text-[#101828]">Instructions</h3>
                                     <p className="text-sm text-[#667085]">Drop a csv file with the following columns -</p>
                                     <ol className="list-decimal list-inside text-sm text-[#667085] space-y-1">
-                                        <li><span className="font-semibold">First name*</span> - first name of the client</li>
-                                        <li><span className="font-semibold">Last name*</span> - last name of the client</li>
-                                        <li><span className="font-semibold">Email</span> - valid email fo the client (optional)</li>
-                                        <li><span className="font-semibold">Phone number*</span> - add client's valid whatsapp number</li>
-                                        <li><span className="font-semibold">Assigned RM</span> - write name of RM which exactly matches the name added by you in the employee page; Admin's name will be added if left blank. for example ( admin@finora.com )</li>
+                                        <li><span className="font-semibold">Name *</span> - name of the client</li>
+                                        <li><span className="font-semibold">Country code *</span> - country code if the client is outside; leave blank for Indian numbers</li>
+                                        <li><span className="font-semibold">Phone number *</span> - add client's valid whatsapp number</li>
+                                        <li><span className="font-semibold">Plan *</span> - write the plan subscribed which exactly matches your plans added in the plans page</li>
+                                        <li><span className="font-semibold">Plan expiry date </span>write when plan expires in YYYY/MM/DD format; a day of 30 days from today will be added if left blank</li>
+                                        <li><span className="font-semibold">Assigned RM</span> - write name of RM which exactly matches the name added by you in the employee page; Admin's name will be added if left blank.</li>
+                                        <li><span className="font-semibold">Risk Profile *</span>- Choose one of the three options from "conservative", "high", "aggressive"</li>
                                     </ol>
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm text-[#667085]">Or, download</p>

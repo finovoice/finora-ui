@@ -8,6 +8,15 @@ export const getSubscriptionsAPI = async (): Promise<SubscriptionType[]> => {
     return await sendGetRequest(SUBSCRIPTION_API_SERVICE_URL, "subscriptions")
 }
 
+export const getSubscriptionByClientIDAPI = async (clientId: string): Promise<SubscriptionType[]> => {
+    return await sendGetRequest(SUBSCRIPTION_API_SERVICE_URL + '?client=' + clientId, "subscriptions")
+}
+
+// export const updateSubcription = async (sub: SubscriptionType): Promise<SubscriptionType> =>{
+//         const requestOptions = await getRequestOptions(sub, "PATCH")
+//     return await sendUpdateCreateRequest(SUBSCRIPTION_API_SERVICE_URL, requestOptions, 'subscriptions') as SubscriptionType
+// }
+
 export const createSubscriptionAPI = async (sub: SubscriptionType): Promise<SubscriptionType> => {
     const requestOptions = await getRequestOptions(sub, "POST")
     return await sendUpdateCreateRequest(SUBSCRIPTION_API_SERVICE_URL, requestOptions, "subscriptions") as SubscriptionType
