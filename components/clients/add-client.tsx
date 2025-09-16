@@ -13,7 +13,6 @@ import { showToast } from '../ui/toast-manager';
 import { importLeadAPI, bulkCreateLeadsAPI, importClientAPI, bulkCreateClientsAPI } from "@/services/clients"; // Import bulkCreateLeadsAPI
 import { EditableClient, LeadType } from "@/constants/types";
 import { uploadFileAPI } from "@/services/upload"; // Import uploadFileAPI
-import { AxiosProgressEvent } from "axios"; // Import AxiosProgressEvent
 import Papa from 'papaparse'; // Import PapaParse
 import { downloadCSV } from '@/lib/utils'; // Import downloadCSV utility
 
@@ -29,7 +28,7 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
     const [name, setName] = useState<string>("");
     const [email, setEmail] = useState<string>("");
     const [phoneNumber, setPhoneNumber] = useState<string>("");
-    const [assigned_RM, setAssigned_RM] = useState<string>("1"); // Default value
+    const [assigned_RM, setAssigned_RM] = useState<string>("admin@finora.com"); // Default value
     const [countryCode, setCountryCode] = useState("IND (+91)");
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -122,15 +121,15 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
             return;
         }
 
-        if (nameParts.length < 2 || lastName.length < 2) {
-            showToast({
-                title: 'Validation Error',
-                description: 'Both first name and last name are required, and each must be at least 2 characters long.',
-                type: 'warning',
-                duration: 3000
-            });
-            return;
-        }
+        // if (nameParts.length < 2 || lastName.length < 2) {
+        //     showToast({
+        //         title: 'Validation Error',
+        //         description: 'Both first name and last name are required, and each must be at least 2 characters long.',
+        //         type: 'warning',
+        //         duration: 3000
+        //     });
+        //     return;
+        // }
 
         if (!isValidIndianName(trimmedName)) {
             showToast({
@@ -236,7 +235,7 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
             setPhoneNumber("")
             setPlan("")
             setDate("")
-            setAssigned_RM("1")
+            setAssigned_RM("admin@finora.com")
             setRisk("")
 
         }
@@ -317,7 +316,7 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
                         const phoneNumber = row['Phone Number']?.trim();
                         const planData = row['Plan']?.trim();
                         const planExpiryDate = row['Plan expiry date']?.trim();
-                        const assignedRM = row['Assigned RM']?.trim() || '1';
+                        const assignedRM = row['Assigned RM']?.trim() || 'admin@finora.com';
                         const riskProfile = row['Risk Profile']?.trim();
 
                         if (!name || !planData || !phoneNumber || !riskProfile) {
@@ -525,13 +524,13 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
                         <div className="flex flex-row gap-4 justify-between w-full">
                             <div className="space-y-1 w-full">
                                 <Label htmlFor="assigned-rm" className="text-sm font-medium text-[#344054] block">Assigned RM</Label>
-                                <Select defaultValue="1" onValueChange={setAssigned_RM}>
+                                <Select defaultValue="admin@finora.com" onValueChange={setAssigned_RM}>
                                     <SelectTrigger className="w-full h-10 border-[#d0d5dd] focus:ring-0 focus:ring-offset-0">
                                         <SelectValue placeholder="Select RM" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="1">admin@finora.com</SelectItem>
-                                        <SelectItem value="2">samir@gmail.com</SelectItem>
+                                        <SelectItem value="admin@finora.com">admin@finora.com</SelectItem>
+                                        <SelectItem value="samir@gmail.com">samir@gmail.com</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
