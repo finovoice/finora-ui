@@ -55,6 +55,9 @@ const getAuthToken = (): string | null => {
 export const signOut = () => {
     if (typeof window === 'undefined') return;
     localStorage.removeItem('accessToken');
+    try {
+      window.sessionStorage.removeItem('user_data')
+    } catch (_) {}
 };
 
 

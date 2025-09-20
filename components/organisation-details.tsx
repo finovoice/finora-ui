@@ -5,6 +5,9 @@ import { getOrganisationAPI, updateOrganisationAPI, type Organisation, type Orga
 import { Button } from "@/components/ui/button"
 import { Pencil, Loader2 } from "lucide-react"
 import OrgEditDialog from "@/components/org-edit-dialog"
+import {useAtom} from "jotai";
+import {USER_DATA_KEY, userAtom} from "@/hooks/user-atom";
+import {useSetAtom} from "jotai/index";
 
 /**
  * OrganisationDetails component
@@ -12,20 +15,21 @@ import OrgEditDialog from "@/components/org-edit-dialog"
  * - Displays loading and error states
  * - Opens OrgEditDialog for editing (no inline edit)
  */
-export default function OrganisationDetails({ orgId }: { orgId: number }) {
+export default function OrganisationDetails() {
   const [data, setData] = useState<Organisation | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [orgOpen, setOrgOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [user] = useAtom(userAtom)
 
-  useEffect(() => {
+    useEffect(() => {
     let cancelled = false
     async function load() {
       setLoading(true)
       setError(null)
       try {
-        const res = await getOrganisationAPI(orgId)
+        const res = await getOrganisationAPI(user?.organisation as number)
         if (!cancelled) {
           setData(res)
         }
@@ -41,7 +45,7 @@ export default function OrganisationDetails({ orgId }: { orgId: number }) {
     return () => {
       cancelled = true
     }
-  }, [orgId])
+  }, [user?.organisation])
 
   const createdUpdated = useMemo(() => {
     if (!data) return null

@@ -63,7 +63,7 @@ export default function SettingsPage() {
             <>
               {/* About Card */}
               <section className="px-6 py-6">
-                <OrganisationDetails orgId={1} />
+                <OrganisationDetails />
               </section>
 
               {/* Employees */}

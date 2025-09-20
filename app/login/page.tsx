@@ -9,12 +9,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import {startServerAPI} from "@/services";
+import { startServerAPI } from "@/services";
+import { useSetAtom } from "jotai"
+import { userAtom } from "@/hooks/user-atom"
 
 export default function LoginPage() {
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const setUser = useSetAtom(userAtom)
 
     useEffect(() => {
         startServerAPI().then(() => {
@@ -55,6 +58,8 @@ export default function LoginPage() {
             if (res?.valid && res?.token) {
                 // Persist token
                 localStorage.setItem("accessToken", res.token as string)
+                // Set user in Jotai atom for immediate availability
+                setUser(res.user ?? null)
                 // Navigate to the dashboard
                 // router.replace("/dashboard")
                 router.replace("/")
