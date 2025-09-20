@@ -19,9 +19,22 @@ const ApiClient = () => {
         return response
       },
       (error) => {
+        const status = error?.response?.status
+        if (typeof window !== 'undefined' && status === 401) {
+          try {
+            // Clear token and redirect to login
+            signOut()
+          } catch (_) {}
+          try {
+            const currentPath = window.location?.pathname || ""
+            if (!currentPath.startsWith("/login")) {
+              window.location.replace("/login")
+            }
+          } catch (_) {}
+        }
         throw {
           ...error,
-          status: error?.response?.status,
+          status,
           message: error?.response?.data?.message,
         }
       }
