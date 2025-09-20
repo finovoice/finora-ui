@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 import "react-datepicker/dist/react-datepicker.css";
 import Providers from "@/components/Providers";
+import AuthGuard from "@/components/AuthGuard";
 
 export const metadata: Metadata = {
   title: 'v0 App',
@@ -38,7 +39,10 @@ html {
           {/* Providers component mounts ToastManager globally */}
           {/* Using dynamic import is optional; direct use works */}
           {/* @ts-expect-error Async Server Component boundary wraps client children */}
-          <Providers>{children}</Providers>
+          <Providers>
+            {/* Client-side auth guard to redirect to login when token is missing */}
+            <AuthGuard>{children}</AuthGuard>
+          </Providers>
         </div>
       </body>
     </html>
