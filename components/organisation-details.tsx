@@ -1,13 +1,18 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { getOrganisationAPI, updateOrganisationAPI, type Organisation, type OrganisationUpdateRequest } from "@/services/settings"
-import { Button } from "@/components/ui/button"
-import { Pencil, Loader2 } from "lucide-react"
-import OrgEditDialog from "@/components/org-edit-dialog"
-import {useAtom} from "jotai";
-import {USER_DATA_KEY, userAtom} from "@/hooks/user-atom";
-import {useSetAtom} from "jotai/index";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getOrganisationAPI,
+  updateOrganisationAPI,
+  type Organisation,
+  type OrganisationUpdateRequest,
+} from "@/services/settings";
+import { Button } from "@/components/ui/button";
+import { Pencil, Loader2 } from "lucide-react";
+import OrgEditDialog from "@/components/org-edit-dialog";
+import { useAtom } from "jotai";
+import { USER_DATA_KEY, userAtom } from "@/hooks/user-atom";
+import { useSetAtom } from "jotai/index";
 
 /**
  * OrganisationDetails component
@@ -16,65 +21,71 @@ import {useSetAtom} from "jotai/index";
  * - Opens OrgEditDialog for editing (no inline edit)
  */
 export default function OrganisationDetails() {
-  const [data, setData] = useState<Organisation | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [orgOpen, setOrgOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [user] = useAtom(userAtom)
+  const [data, setData] = useState<Organisation | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [orgOpen, setOrgOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [user] = useAtom(userAtom);
 
-    useEffect(() => {
-    let cancelled = false
+  useEffect(() => {
+    let cancelled = false;
     async function load() {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
       try {
-        const res = await getOrganisationAPI(user?.organisation as number)
+        const organisationId = user?.organisation as number;
+        const res = await getOrganisationAPI(organisationId);
         if (!cancelled) {
-          setData(res)
+          setData(res);
         }
       } catch (e: any) {
         if (!cancelled) {
-          setError(e?.message ?? "Failed to load organisation")
+          setError(e?.message ?? "Failed to load organisation");
         }
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoading(false);
       }
     }
-    load()
+    load();
     return () => {
-      cancelled = true
-    }
-  }, [user?.organisation])
+      cancelled = true;
+    };
+  }, [user?.organisation]);
 
   const createdUpdated = useMemo(() => {
-    if (!data) return null
-    const created = new Date(data.created_at)
-    const updated = new Date(data.updated_at)
-    return { created: created.toLocaleString(), updated: updated.toLocaleString() }
-  }, [data])
+    if (!data) return null;
+    const created = new Date(data.created_at);
+    const updated = new Date(data.updated_at);
+    return {
+      created: created.toLocaleString(),
+      updated: updated.toLocaleString(),
+    };
+  }, [data]);
 
   if (loading) {
     return (
       <div className="flex items-center gap-2 px-6 py-6 text-[#667085]">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading organisation...
       </div>
-    )
+    );
   }
 
   if (error && !data) {
-    return (
-      <div className="px-6 py-6 text-sm text-red-600">{error}</div>
-    )
+    return <div className="px-6 py-6 text-sm text-red-600">{error}</div>;
   }
 
-  if (!data) return null
+  if (!data) return null;
 
   return (
     <div className="rounded-lg border border-[#e4e7ec] bg-white">
       <div className="flex items-center justify-between border-b border-[#e4e7ec] px-4 py-3">
         <h2 className="text-sm font-medium text-[#344054]">About</h2>
-        <Button variant="outline" onClick={() => setOrgOpen(true)} className="inline-flex items-center gap-2 border-[#e4e7ec] bg-white text-[#344054] hover:bg-[#f2f4f7] h-8 px-3">
+        <Button
+          variant="outline"
+          onClick={() => setOrgOpen(true)}
+          className="inline-flex items-center gap-2 border-[#e4e7ec] bg-white text-[#344054] hover:bg-[#f2f4f7] h-8 px-3"
+        >
           <Pencil className="h-4 w-4" /> Edit
         </Button>
       </div>
@@ -86,9 +97,15 @@ export default function OrganisationDetails() {
           <div className="h-12 w-12 rounded-md bg-[#f2f4f7] flex items-center justify-center overflow-hidden">
             {data.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.logo_url} alt="logo" className="h-12 w-12 object-cover" />
+              <img
+                src={data.logo_url}
+                alt="logo"
+                className="h-12 w-12 object-cover"
+              />
             ) : (
-              <span className="text-[#667085] text-lg font-semibold">{data.name?.[0]?.toUpperCase() ?? "?"}</span>
+              <span className="text-[#667085] text-lg font-semibold">
+                {data.name?.[0]?.toUpperCase() ?? "?"}
+              </span>
             )}
           </div>
         </div>
@@ -101,7 +118,9 @@ export default function OrganisationDetails() {
 
         {/* License Number */}
         <div className="space-y-2">
-          <div className="text-xs text-[#667085]">SEBI Registered License Number</div>
+          <div className="text-xs text-[#667085]">
+            SEBI Registered License Number
+          </div>
           <div className="text-sm">{data.license_number}</div>
         </div>
 
@@ -128,7 +147,11 @@ export default function OrganisationDetails() {
           <div className="text-xs text-[#667085]">Sign</div>
           {data.signature_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.signature_url} alt="signature" className="h-10 w-24 object-contain" />
+            <img
+              src={data.signature_url}
+              alt="signature"
+              className="h-10 w-24 object-contain"
+            />
           ) : (
             <div className="h-10 w-24 bg-[#f2f4f7]" aria-label="signature" />
           )}
@@ -161,19 +184,19 @@ export default function OrganisationDetails() {
         onOpenChange={(v) => setOrgOpen(v)}
         initial={data}
         onSave={async (payload: OrganisationUpdateRequest) => {
-          if (!data) return
+          if (!data) return;
           try {
-            setSaving(true)
-            const updated = await updateOrganisationAPI(data.id, payload)
-            setData(updated)
-            setOrgOpen(false)
+            setSaving(true);
+            const updated = await updateOrganisationAPI(data.id, payload);
+            setData(updated);
+            setOrgOpen(false);
           } catch (e: any) {
-            setError(e?.message ?? "Failed to update organisation")
+            setError(e?.message ?? "Failed to update organisation");
           } finally {
-            setSaving(false)
+            setSaving(false);
           }
         }}
       />
     </div>
-  )
+  );
 }

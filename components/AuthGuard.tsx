@@ -1,43 +1,40 @@
-"use client"
+"use client";
 
-import React, { useEffect, useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import React, { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useAtom } from "jotai";
+import { accessTokenAtom, useAccessTokenAtom } from "@/hooks/user-atom";
 
 /**
  * AuthGuard ensures that users without an access token are redirected to the login screen.
  * It allows the /login route to be accessed without a token.
  */
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const [checked, setChecked] = useState(false)
-
+  const router = useRouter();
+  const pathname = usePathname();
+  const [checked, setChecked] = useState(false);
+  const [token] = useAccessTokenAtom(); // Subscribe to atom here
+  
   useEffect(() => {
-    // Allow login route without checks
-    if (!pathname || pathname.startsWith("/login")) {
-      setChecked(true)
-      return
+    async function checkAuth() {
+      if (!pathname || pathname.startsWith("/login")) {
+        setChecked(true);
+        return;
+      }
+
+      if (!token) {
+        await router.replace("/login");
+        return;
+      }
+
+      setChecked(true);
     }
 
-    // Client-side token check
-    try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
-      if (!token) {
-        // Redirect to login if token absent
-        router.replace("/login")
-        return
-      }
-    } catch (e) {
-      // In case of any localStorage errors, fail closed to login
-      router.replace("/login")
-      return
-    } finally {
-      setChecked(true)
-    }
-  }, [pathname, router])
+    checkAuth();
+  }, [pathname, router, token]);
 
   // Avoid content flash before decision
-  if (!checked) return null
+  if (!checked) return null;
 
-  return <>{children}</>
+  return <>{children}</>;
 }

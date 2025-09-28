@@ -38,7 +38,7 @@ html {
           {/* Wrap app content */}
           {/* Providers component mounts ToastManager globally */}
           {/* Using dynamic import is optional; direct use works */}
-          {/* @ts-expect-error Async Server Component boundary wraps client children */}
+          {/* Providers must be client component */}
           <Providers>
             {/* Client-side auth guard to redirect to login when token is missing */}
             <AuthGuard>{children}</AuthGuard>
