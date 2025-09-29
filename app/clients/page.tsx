@@ -46,9 +46,7 @@ export default function ClientsPage() {
   } = useClients();
 
   const [addClientOpen, setAddClientOpen] = useState<boolean>(false);
-  const [subsciption, setSubscription] = useState<SubscriptionType[] | []>([]);
-
-  const [client, setClient] = useState<ClientType>();
+  const [subscription, setSubscription] = useState<SubscriptionType[] | []>([]);
 
   // Filter states
   const [selectedPlan, setSelectedPlan] = useState<string[]>([]);
@@ -505,7 +503,7 @@ export default function ClientsPage() {
               client={activeClient}
               refreshClients={refreshClients}
               setSubscriptionList={setSubscription}
-              subscriptionList={subsciption}
+              subscriptionList={subscription}
               refreshSubscriptions={refreshSubscriptions}
             />
           )}
