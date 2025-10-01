@@ -55,7 +55,6 @@ export const deletePlanAPI = async (id: number): Promise<void> => {
   const requestOptions = await getRequestOptions({}, "DELETE");
   await sendUpdateCreateRequest(url, requestOptions, "plan");
 };
-
 export type RenewalKey = "WEEKLY" | "MONTHLY" | "QUARTERLY" | undefined;
 
 export type PlanDetails = {
