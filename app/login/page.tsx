@@ -31,7 +31,6 @@ export default function LoginPage() {
       });
   }, []);
 
-  // If already logged in, redirect to dashboard
   useEffect(() => {
     if (typeof window !== "undefined") {
       if (token) router.replace("/");

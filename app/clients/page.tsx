@@ -28,7 +28,7 @@ import {
 import { useEffect, useState, useMemo } from "react";
 import ClientDrawer from "@/components/clients/client-drawer";
 import type { ClientType, SubscriptionType } from "@/constants/types";
-import { showToast, ToastManager } from "@/components/ui/toast-manager";
+import { ToastManager } from "@/components/ui/toast-manager";
 import AddClient from "@/components/clients/add-client";
 import { getSubscriptionByClientIDAPI } from "@/services/subscription";
 import LoadingEllipsis from "@/components/ui/loading-ellipsis";
