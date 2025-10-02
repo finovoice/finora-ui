@@ -49,6 +49,8 @@ import { getCurrentSubscriptionFromList } from "@/lib/getCurrentSubscriptionFrom
 import { getFutureSubscriptionsFromList } from "@/lib/getFutureSubscriptionFromList";
 import LoadingSpinner from "../ui/loading-spinner";
 import { getPastSubscriptionFromList } from "@/lib/getPastSubscriptionFromList";
+import { createSignedUrlAPI } from '@/services/upload'
+import { AsyncResource } from "async_hooks";
 
 export default function ClientDrawer({
   open,
@@ -71,6 +73,7 @@ export default function ClientDrawer({
   const [editClient, setEditClient] = useState<boolean>(false);
   const [sending, setSending] = useState<boolean>(false);
   const [text, setText] = useState<string>("");
+
 
   const [currentSubscription, setCurrentSubscription] =
     useState<SubscriptionType | null>(null);
@@ -824,23 +827,68 @@ function ContractViewer({
   url: string;
   fileName?: string;
 }) {
-  const handleDownload = () => {
-    if (url) {
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      link.target = "_blank";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
 
-  const handlePreview = () => {
-    if (url) {
-      window.open(url, "_blank");
-    }
-  };
+const [signedUrl, setSignedUrl] = useState<string | null>(null);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+
+const handleDownload = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const res = await createSignedUrlAPI(url);
+    const downloadUrl = res.signed_url;
+
+    if (!downloadUrl) throw new Error("Failed to get signed URL");
+
+    // Fetch the file content as a blob
+    const response = await fetch(downloadUrl);
+    if (!response.ok) throw new Error("Failed to fetch file");
+
+    const blob = await response.blob();
+
+    // Create a local URL for the blob
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    // Create a link and trigger download
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName || "download"; // fallback filename
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    setError("Failed to download file.");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+const handlePreview = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    const res = await createSignedUrlAPI(url);
+    const previewUrl = res.signed_url;
+
+    if (!previewUrl) throw new Error("Failed to get signed URL");
+
+    setSignedUrl(previewUrl);
+    window.open(previewUrl, "_blank");
+  } catch (err) {
+    setError("Failed to open preview.");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="rounded-lg border border-[#e4e7ec] bg-white shadow-sm">
@@ -902,7 +950,7 @@ function ContractViewer({
                 variant="outline"
                 size="sm"
                 onClick={handleDownload}
-                className="text-xs"
+                className="text-xs"               
               >
                 <Download className="h-3 w-3 mr-1" />
                 Download

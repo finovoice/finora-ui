@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FileText, Download, ExternalLink, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createSignedUrlAPI } from '@/services/upload'
@@ -20,6 +20,10 @@ export default function SignedUrlPreview({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const [hasViewed, setHasViewed] = useState(false)
+   
+ 
+  
+  
 
   const getFileExtension = (filename: string) => {
     return filename.split('.').pop()?.toLowerCase() || ''
@@ -36,29 +40,60 @@ export default function SignedUrlPreview({
     return 'document'
   }
 
-  const handleDownload = () => {
-    if (url) {
-      const link = document.createElement('a')
-      link.href = url
-      link.download = fileName
-      link.target = '_blank'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    }
-  }
+ const handleDownload = async () => {
+  setLoading(true)
+  try {
+    const res = await createSignedUrlAPI(url)
+    const fileUrl = res.signed_url
+    setSignedUrl(fileUrl)
 
-  const handlePreview = () => {
-    if (url) {
-      window.open(url, '_blank')
-    }
+    const link = document.createElement('a')
+    link.href = fileUrl
+    link.download = fileName
+    link.target = '_blank'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (err) {
+    console.error("Failed to download:", err)
+    setError(true)
+  } finally {
+    setLoading(false)
+    setHasViewed(true)
   }
+}
 
-  const handleView = async () => {
-      if (url) {
-          window.open(url, '_blank')
-      }
+const handlePreview = async () => {
+  try {
+    setLoading(true)
+    const res = await createSignedUrlAPI(url)
+    const fileUrl = res.signed_url
+    setSignedUrl(fileUrl)
+    window.open(fileUrl, '_blank')
+  } catch (err) {
+    console.error("Failed to preview:", err)
+    setError(true)
+  } finally {
+    setHasViewed(true)
+    setLoading(false)
   }
+}
+
+const handleView = async () => {
+  try {
+    setLoading(true)
+    const res = await createSignedUrlAPI(url)
+    const fileUrl = res.signed_url
+    setSignedUrl(fileUrl)
+    window.open(fileUrl, '_blank')
+  } catch (err) {
+    console.error("Failed to view:", err)
+    setError(true)
+  } finally {
+    setHasViewed(true)
+    setLoading(false)
+  }
+}
 
   // Loading state while fetching signed URL
   if (loading) {

@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { ClientType } from "@/constants/types";
 import { Send, Copy, RefreshCw, FileText, ExternalLink } from "lucide-react";
+import { createSignedUrlAPI } from '@/services/upload'
 
 interface SigningActionsProps {
   client: ClientType;
@@ -32,11 +33,36 @@ export default function SigningActions({
     original_document_url,
   } = client;
 
+   const [signedUrl, setSignedUrl] = useState<string | null>(null)
+   const [isViewing, setIsViewing] = useState(false);
+
   const handleRefreshStatus = () => {
     if (setu_signature_id && id) {
       onRefreshStatus(setu_signature_id, id);
     }
   };
+
+  const getSignedUrl = async () => {
+  try {
+    setIsViewing(true); 
+    const res = await createSignedUrlAPI(original_document_url!);
+    const url = res.signed_url;
+
+    if (!url) throw new Error("Signed URL not received");
+
+    setSignedUrl(url);  // Optional
+    onViewDocument(url);  // Or: window.open(url, "_blank")
+  } catch (error) {
+    console.error("Error generating signed URL:", error);
+  } finally {
+    setIsViewing(false); 
+  }
+};
+
+
+
+
+  
 
   return (
     <div className="space-y-4">
@@ -143,12 +169,21 @@ export default function SigningActions({
           </div>
 
           <Button
-            onClick={() => onViewDocument(original_document_url!)}
+            onClick={ getSignedUrl}
             className="min-w-[180px]"
           >
-            <FileText className="w-4 h-4 mr-2" />
-            View Signed Document
-            <ExternalLink className="w-3 h-3 ml-2" />
+            {isViewing ? (
+    <>
+      <LoadingSpinner/>
+      Loading...
+    </>
+  ) : (
+    <>
+      <FileText className="w-4 h-4 mr-2" />
+      View Signed Document
+      <ExternalLink className="w-3 h-3 ml-2" />
+    </>
+  )}
           </Button>
         </div>
       )}
