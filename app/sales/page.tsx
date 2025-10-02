@@ -104,13 +104,12 @@ export default function SalesPage() {
                         {planOptions.map((plan) => (
                           <CommandItem
                             key={plan}
-                           onSelect={() => {
-  const newValue = selectedPlan.includes(plan)
-    ? selectedPlan.filter((p) => p !== plan)
-    : [...selectedPlan, plan];
-
-  setSelectedPlan(newValue); 
-}}
+                            onSelect={() => {
+                              const newValue = selectedPlan.includes(plan)
+                                ? selectedPlan.filter((p) => p !== plan)
+                                : [...selectedPlan, plan];
+                              setSelectedPlan(newValue);
+                            }}
                             className="cursor-pointer flex items-center justify-between"
                           >
                             {toSentenceCase(plan)}
@@ -152,12 +151,11 @@ export default function SalesPage() {
                         {leadQualityOptions.map((quality) => (
                           <CommandItem
                             key={quality}
-                            
                             onSelect={() => {
-  const newValue = selectedLeadQuality.includes(quality)
-    ? selectedLeadQuality.filter((q) => q !== quality)
-    : [...selectedLeadQuality, quality];
-  setSelectedLeadQuality(newValue);
+                              const newValue = selectedLeadQuality.includes(quality)
+                                ? selectedLeadQuality.filter((q) => q !== quality)
+                                : [...selectedLeadQuality, quality];
+                              setSelectedLeadQuality(newValue);
                             }}
                             className="cursor-pointer flex items-center justify-between"
                           >
