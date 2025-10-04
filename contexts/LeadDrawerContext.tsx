@@ -110,7 +110,7 @@ export function LeadDrawerProvider({
   }, [lead?.id, client])
 
   useEffect(() => {
-    if (stage === "DOCUMENTED") setTab("onboard")
+    if (stage === "ONBOARDING") setTab("onboard")
   }, [stage])
 
   async function handleEditClientSubmit() {

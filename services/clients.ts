@@ -1,6 +1,7 @@
 import { getRequestOptions, sendGetRequest, sendUpdateCreateRequest } from "@/services/index"
 import { BACKEND_URL } from "@/constants/configs"
 import { ClientType, EditableClient, LeadType, SigningStatusResponse } from "@/constants/types";
+import { RMUser } from "@/constants/types";
 
 const CLIENT_API_SERVICE_URL = `${BACKEND_URL}/api/core/clients/`
 const BULK_CREATE_LEADS_API_SERVICE_URL = `${BACKEND_URL}/api/core/clients/bulk-create/`
@@ -77,3 +78,7 @@ export const bulkCreateClientsAPI = async (leads: EditableClient[]): Promise<any
   const requestOptions = await getRequestOptions(leads, "POST")
   return await sendUpdateCreateRequest(BULK_CREATE_LEADS_API_SERVICE_URL, requestOptions, "bulk clients")
 }
+
+export const getAllUsers = async (): Promise<RMUser[]> => {
+  return await sendGetRequest(`${BACKEND_URL}/account/users`, "Users");
+};

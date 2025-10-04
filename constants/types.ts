@@ -193,7 +193,7 @@ export type SubscriptionType = {
   plan_type?: string; // "ELITE" | "STANDARD" | "PREMIUM"; adjust as needed
 };
 
-export type LeadStage = "LEAD" | "CONTACTED" | "DOCUMENTED" | "AWAITING_PAYMENT";
+export type LeadStage = "LEAD" | "CONTACTED" | "ONBOARDING" | "AWAITING_PAYMENT";
 
 export type Profile = "HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND" | string;
 
@@ -208,4 +208,13 @@ export type ContractUploadRequest = {
 export type RefreshStatusRequest = {
   requestId: string
   clientId: string
+}
+
+export interface RMUser {
+  id: number;
+  email: string;
+  phone_number: string;
+  type: string;
+  is_admin: boolean;
+  is_org_admin: boolean;
 }

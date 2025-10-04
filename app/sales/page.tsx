@@ -1,19 +1,27 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import LeadCard from "@/components/sales/lead-card"
-import Sidebar from "@/components/sidebar"
-import { ChevronDown, Upload, RotateCcw, Search, Check } from 'lucide-react'
-import LeadDrawer, { type Lead } from "@/components/sales/lead-drawer"
-import { useEffect } from "react"
-import AddLead from "@/components/sales/add-lead"
-import {ClientType, LeadStage, Profile} from "@/constants/types"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command"
-import LoadingSpinner from "@/components/ui/loading-spinner"
-import { useSales } from "@/contexts/SalesContext"
-
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import LeadCard from "@/components/sales/lead-card";
+import Sidebar from "@/components/sidebar";
+import { ChevronDown, Upload, RotateCcw, Search, Check } from "lucide-react";
+import LeadDrawer, { type Lead } from "@/components/sales/lead-drawer";
+import { useEffect } from "react";
+import AddLead from "@/components/sales/add-lead";
+import { ClientType, LeadStage, Profile } from "@/constants/types";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import { useSales } from "@/contexts/SalesContext";
 
 export default function SalesPage() {
   const {
@@ -35,7 +43,7 @@ export default function SalesPage() {
     setSelectedLeadQuality,
     setSearchQuery,
     resetFilters,
-  } = useSales()
+  } = useSales();
 
   useEffect(() => {
     let mounted = true;
@@ -48,18 +56,33 @@ export default function SalesPage() {
   }, [refreshClients]);
 
   // Generate filter options
-  const planOptions: ('STANDARD' | "PREMIUM" | 'ELITE')[] = ['STANDARD', 'PREMIUM', 'ELITE']
-  const leadQualityOptions: ("HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND")[] = ["HOT", "COLD", "WARM", "NEUTRAL", "DND"]
+  const planOptions: ("STANDARD" | "PREMIUM" | "ELITE")[] = [
+    "STANDARD",
+    "PREMIUM",
+    "ELITE",
+  ];
+  const leadQualityOptions: ("HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND")[] = [
+    "HOT",
+    "COLD",
+    "WARM",
+    "NEUTRAL",
+    "DND",
+  ];
 
-  const columns = transformLeads(clientList, selectedPlan, selectedLeadQuality, searchQuery)
+  const columns = transformLeads(
+    clientList,
+    selectedPlan,
+    selectedLeadQuality,
+    searchQuery
+  );
 
   function openDrawer(lead: Lead) {
-    openDrawerForLead(lead)
+    openDrawerForLead(lead);
   }
 
   const handleResetFilters = () => {
-    resetFilters()
-  }
+    resetFilters();
+  };
 
   return (
     <div className="min-h-screen bg-[#f9fafb]">
@@ -69,8 +92,10 @@ export default function SalesPage() {
           <header className="sticky top-0 z-10 border-b border-[#e4e7ec] bg-[#fafafa]">
             <div className="flex items-center justify-between px-6 py-4">
               <h1 className="text-lg font-semibold text-[#101828]">Sales</h1>
-              <Button onClick={() => toggleAddLead(true)}
-                className="h-9 gap-2 rounded-md border-1 border-black/30 bg-transparent text-black/70 hover:text-[#7f56d9] hover:border-[#7f56d9] hover:bg-transparent">
+              <Button
+                onClick={() => toggleAddLead(true)}
+                className="h-9 gap-2 rounded-md border-1 border-black/30 bg-transparent text-black/70 hover:text-[#7f56d9] hover:border-[#7f56d9] hover:bg-transparent"
+              >
                 <Upload className="h-4 w-4" />
                 Import leads
               </Button>
@@ -85,13 +110,17 @@ export default function SalesPage() {
                         {selectedPlan.length === 0
                           ? "All Plans"
                           : selectedPlan.length === 1
-                            ? toSentenceCase(selectedPlan[0])
-                            : `${selectedPlan.length} selected`}
+                          ? toSentenceCase(selectedPlan[0])
+                          : `${selectedPlan.length} selected`}
                       </span>
                       <ChevronDown className="h-4 w-4 text-[#98a2b3]" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="start" side="bottom">
+                  <PopoverContent
+                    className="w-[200px] p-0"
+                    align="start"
+                    side="bottom"
+                  >
                     <Command>
                       <CommandEmpty>No plan found.</CommandEmpty>
                       <CommandGroup>
@@ -113,7 +142,9 @@ export default function SalesPage() {
                             className="cursor-pointer flex items-center justify-between"
                           >
                             {toSentenceCase(plan)}
-                            {selectedPlan.includes(plan) && <Check className="ml-auto h-4 w-4" />}
+                            {selectedPlan.includes(plan) && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -132,13 +163,17 @@ export default function SalesPage() {
                         {selectedLeadQuality.length === 0
                           ? "All Lead quality"
                           : selectedLeadQuality.length === 1
-                            ? toSentenceCaseLeadQuality(selectedLeadQuality[0])
-                            : `${selectedLeadQuality.length} selected`}
+                          ? toSentenceCaseLeadQuality(selectedLeadQuality[0])
+                          : `${selectedLeadQuality.length} selected`}
                       </span>
                       <ChevronDown className="h-4 w-4 text-[#98a2b3]" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="start" side="bottom">
+                  <PopoverContent
+                    className="w-[200px] p-0"
+                    align="start"
+                    side="bottom"
+                  >
                     <Command>
                       <CommandEmpty>No quality found.</CommandEmpty>
                       <CommandGroup>
@@ -152,15 +187,17 @@ export default function SalesPage() {
                           <CommandItem
                             key={quality}
                             onSelect={() => {
-                              const newValue = selectedLeadQuality.includes(quality)
-                                ? selectedLeadQuality.filter((q) => q !== quality)
-                                : [...selectedLeadQuality, quality];
-                              setSelectedLeadQuality(newValue);
+  const newValue = selectedLeadQuality.includes(quality)
+    ? selectedLeadQuality.filter((q) => q !== quality)
+    : [...selectedLeadQuality, quality];
+  setSelectedLeadQuality(newValue);
                             }}
                             className="cursor-pointer flex items-center justify-between"
                           >
                             {toSentenceCaseLeadQuality(quality)}
-                            {selectedLeadQuality.includes(quality) && <Check className="ml-auto h-4 w-4" />}
+                            {selectedLeadQuality.includes(quality) && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -168,7 +205,10 @@ export default function SalesPage() {
                   </PopoverContent>
                 </Popover>
 
-                <button onClick={handleResetFilters} className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-[#667085] hover:bg-[#f2f4f7]">
+                <button
+                  onClick={handleResetFilters}
+                  className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-[#667085] hover:bg-[#f2f4f7]"
+                >
                   <RotateCcw className="h-4 w-4" />
                   <span>Reset</span>
                 </button>
@@ -191,7 +231,10 @@ export default function SalesPage() {
             {/* Use your preferred horizontal or vertical layout; this keeps columns flexible */}
             <div className="flex flex-col gap-4 xl:grid xl:grid-cols-4 ">
               {columns.map((col) => (
-                <section key={col.id} className="rounded-lg border border-[#e4e7ec] bg-white h-fit">
+                <section
+                  key={col.id}
+                  className="rounded-lg border border-[#e4e7ec] bg-white h-fit"
+                >
                   <div className="flex items-center justify-between px-3 py-2 ">
                     <div className="flex flex-row w-full justify-between items-center">
                       <div className="flex flex-row items-center gap-2">
@@ -215,14 +258,16 @@ export default function SalesPage() {
                     {col.leads.map((lead) => (
                       <button
                         key={lead.id}
-                        onClick={() => openDrawer({
-                          id: lead.id,
-                          name: lead.name,
-                          phone: lead.phone,
-                          email: lead.email,
-                          stage: lead.stage,
-                          profile: lead.profile,
-                        })}
+                        onClick={() =>
+                          openDrawer({
+                            id: lead.id,
+                            name: lead.name,
+                            phone: lead.phone,
+                            email: lead.email,
+                            stage: lead.stage,
+                            profile: lead.profile,
+                          })
+                        }
                         className="block w-full text-left"
                       >
                         <LeadCard {...lead} />
@@ -252,7 +297,7 @@ export default function SalesPage() {
         refreshClients={refreshClients}
       />
     </div>
-  )
+  );
 }
 
 function FilterButton({ label }: { label: string }) {
@@ -261,7 +306,7 @@ function FilterButton({ label }: { label: string }) {
       <span>{label}</span>
       <ChevronDown className="h-4 w-4 text-[#98a2b3]" />
     </button>
-  )
+  );
 }
 
 type LeadCardDataProps = {
@@ -293,25 +338,42 @@ function transformLeads(
   let filteredData = data;
 
   if (selectedPlan.length > 0) {
-    filteredData = filteredData.filter(lead => lead.plan && selectedPlan.includes(lead.plan));
+    filteredData = filteredData.filter(
+      (lead) => lead.plan && selectedPlan.includes(lead.plan)
+    );
   }
 
   if (selectedLeadQuality.length > 0) {
-    filteredData = filteredData.filter(lead =>
-      lead.profile && selectedLeadQuality.includes(lead.profile.toUpperCase() as ("HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND"))
+    filteredData = filteredData.filter(
+      (lead) =>
+        lead.profile &&
+        selectedLeadQuality.includes(
+          lead.profile.toUpperCase() as
+            | "HOT"
+            | "COLD"
+            | "WARM"
+            | "NEUTRAL"
+            | "DND"
+        )
     );
   }
   if (searchQuery) {
     const lowerCaseSearchQuery = searchQuery.toLowerCase();
-    filteredData = filteredData.filter(lead =>
-      `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(lowerCaseSearchQuery)
+    filteredData = filteredData.filter((lead) =>
+      `${lead.first_name} ${lead.last_name}`
+        .toLowerCase()
+        .includes(lowerCaseSearchQuery)
     );
   }
   const grouped: Record<LeadStage, Column> = {
-    'LEAD': { id: "LEAD", title: "Leads", leads: [] },
-    'CONTACTED': { id: "CONTACTED", title: "Contacted", leads: [] },
-    'DOCUMENTED': { id: "DOCUMENTED", title: "Onboarding", leads: [] },
-    'AWAITING_PAYMENT': { id: "AWAITING_PAYMENT", title: "Awaiting Payment", leads: [] },
+    LEAD: { id: "LEAD", title: "Leads", leads: [] },
+    CONTACTED: { id: "CONTACTED", title: "Contacted", leads: [] },
+    ONBOARDING: { id: "ONBOARDING", title: "Onboarding", leads: [] },
+    AWAITING_PAYMENT: {
+      id: "AWAITING_PAYMENT",
+      title: "Awaiting Payment",
+      leads: [],
+    },
   };
 
   filteredData.forEach((lead) => {
@@ -328,7 +390,7 @@ function transformLeads(
       email: lead.email,
       owner: lead.assigned_rm?.email,
       stage: stage,
-      profile: lead.profile
+      profile: lead.profile,
     });
   });
   return Object.values(grouped);
@@ -337,14 +399,31 @@ function transformLeads(
 function formatToReadableDate(isoString: string): string {
   const date = new Date(isoString);
   const day = date.getUTCDate();
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const month = monthNames[date.getUTCMonth()];
   const year = date.getUTCFullYear();
 
-  const suffix = (day === 1 || day === 21 || day === 31) ? "st" :
-    (day === 2 || day === 22) ? "nd" :
-      (day === 3 || day === 23) ? "rd" : "th";
+  const suffix =
+    day === 1 || day === 21 || day === 31
+      ? "st"
+      : day === 2 || day === 22
+      ? "nd"
+      : day === 3 || day === 23
+      ? "rd"
+      : "th";
 
   return `${day}${suffix} ${month} ${year}`;
 }
@@ -354,7 +433,9 @@ function toSentenceCase(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-function toSentenceCaseLeadQuality(str: "HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND"): string {
+function toSentenceCaseLeadQuality(
+  str: "HOT" | "COLD" | "WARM" | "NEUTRAL" | "DND"
+): string {
   if (str === "DND") return "DND";
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
