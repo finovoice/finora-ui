@@ -23,8 +23,6 @@ import {
 import { Switch } from "../ui/switch";
 import { showToast } from "../ui/toast-manager";
 import {
-  importLeadAPI,
-  bulkCreateLeadsAPI,
   importClientAPI,
   bulkCreateClientsAPI,
   getAllUsers,
