@@ -706,7 +706,7 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
                     </li>
                     <li>
                       <span className="font-semibold">Phone number *</span> -
-                      add client's valid whatsapp number
+                      add client's valid whatsapp number without +91
                     </li>
                     <li>
                       <span className="font-semibold">Plan *</span> - write the
