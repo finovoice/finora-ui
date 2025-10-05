@@ -105,7 +105,7 @@ export default function SigningStatus({ client }: SigningStatusProps) {
 
   return (
     <>
-      {isSetuSigningEnabled() && (
+      {isSetuSigningEnabled && (
         <div className="bg-white border border-[#e4e7ec] rounded-lg p-6">
           <h3 className="text-lg font-semibold text-[#101828] mb-6">Signing Progress</h3>
 

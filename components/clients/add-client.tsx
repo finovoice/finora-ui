@@ -30,6 +30,7 @@ import {
 import { EditableClient, RMUser } from "@/constants/types";
 import Papa from "papaparse"; // Import PapaParse
 import { downloadCSV } from "@/lib/utils"; // Import downloadCSV utility
+import { isClientBulkUploadEnable } from "@/utils/featureFlags";
 
 type Props = {
   open: boolean;
@@ -115,6 +116,7 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
     const regex = /^[A-Za-z\s\-]+$/;
     return regex.test(name.trim());
   }
+ 
 
   function isValidEmail(email: string) {
     return /\S+@\S+\.\S+/.test(email);
@@ -157,7 +159,25 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
       });
       return;
     }
+    if (firstName.length < 2) {
+      showToast({
+        title: "Validation Error",
+        description: "First name must be at least 2 characters long.",
+        type: "warning",
+        duration: 3000,
+      });
+      return;
+    }
 
+    if (!isValidIndianName(trimmedName)) {
+      showToast({
+        title: "Validation Error",
+        description: "Name contains invalid characters.",
+        type: "warning",
+        duration: 3000,
+      });
+      return;
+    }
     if (!isValidIndianName(trimmedName)) {
       showToast({
         title: "Validation Error",
@@ -785,24 +805,30 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
                   </div>
                 )}
 
-                <Button
-                  type="button"
-                  onClick={
-                    selectedFile
-                      ? handleUploadCSV
-                      : () => fileInputRef.current?.click()
-                  }
-                  disabled={sending}
-                  className="h-10 w-full px-4 py-2 justify-center gap-2 rounded-lg bg-[#7f56d9] text-white hover:bg-[#6941c6]"
-                >
-                  <span>
-                    {sending
-                      ? "Uploading..."
-                      : selectedFile
-                      ? "Upload"
-                      : "Upload .csv file"}
-                  </span>
-                </Button>
+                {isClientBulkUploadEnable ? (
+                  <Button
+                    type="button"
+                    onClick={
+                      selectedFile
+                        ? handleUploadCSV
+                        : () => fileInputRef.current?.click()
+                    }
+                    disabled={sending}
+                    className="h-10 w-full px-4 py-2 justify-center gap-2 rounded-lg bg-[#7f56d9] text-white hover:bg-[#6941c6]"
+                  >
+                    <span>
+                      {sending
+                        ? "Uploading..."
+                        : selectedFile
+                        ? "Upload"
+                        : "Upload .csv file"}
+                    </span>
+                  </Button>
+                ) : (
+                  <div className="h-10 w-full px-4 py-2 flex items-center justify-center gap-2 rounded-lg bg-[#7f56d9] text-white opacity-60 cursor-not-allowed">
+                    <span>Coming soon</span>
+                  </div>
+                )}
               </>
             )}
 
