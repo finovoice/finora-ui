@@ -43,6 +43,9 @@ export default function ClientsPage() {
     refreshClients,
     openActionsDrawer,
     closeDrawer,
+    pagination,
+    goToPage,
+    setPageSize,
   } = useClients();
 
   const [addClientOpen, setAddClientOpen] = useState<boolean>(false);
@@ -493,6 +496,46 @@ export default function ClientsPage() {
                     </li>
                   ))}
                 </ul>
+
+                {/* Pagination footer */}
+                <div className="flex items-center justify-between border-t border-[#e4e7ec] px-4 py-2 text-sm text-[#475467]">
+                  <div className="flex items-center gap-2">
+                    <span>Rows per page</span>
+                    <select
+                      className="h-8 rounded-md border border-[#e4e7ec] bg-white px-2"
+                      value={pagination.pageSize}
+                      onChange={(e) => setPageSize(Number(e.target.value))}
+                      disabled={loading}
+                    >
+                      {[5, 10, 20, 50].map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span>
+                      Page {pagination.currentPage} of {Math.max(1, pagination.totalPages || 1)}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        className="h-8"
+                        onClick={() => goToPage(pagination.currentPage - 1)}
+                        disabled={loading || pagination.currentPage <= 1}
+                      >
+                        Prev
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-8"
+                        onClick={() => goToPage(pagination.currentPage + 1)}
+                        disabled={loading || (pagination.totalPages > 0 && pagination.currentPage >= pagination.totalPages)}
+                      >
+                        Next
+                      </Button>
+                  </div>
+                </div>
+                </div>
               </div>
             )}
           </section>
