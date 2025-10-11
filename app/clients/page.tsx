@@ -158,6 +158,7 @@ export default function ClientsPage() {
       sortedClients.sort((a, b) => daysLeft(b) - daysLeft(a));
     }
     return sortedClients;
+
   }, [
     clients,
     selectedPlan,
