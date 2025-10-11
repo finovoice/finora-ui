@@ -12,10 +12,12 @@ import {
 import { Mail, PencilLine, Phone } from "lucide-react";
 import React from "react";
 import { useLeadDrawer } from "@/contexts/LeadDrawerContext";
+import { showToast } from "@/components/ui/toast-manager";
 
 export default function LeadDrawerHeader({ onEdit }: { onEdit: () => void }) {
-  const { client, stage, setStage } = useLeadDrawer();
   const [isStageSelectOpen, setIsStageSelectOpen] = React.useState(false);
+  const { pan, dob, riskProfile, plan, client, setStage, stage } =
+    useLeadDrawer();
 
   return (
     <div className="flex items-center justify-between border-b border-[#e4e7ec] px-5 py-4">
@@ -54,6 +56,32 @@ export default function LeadDrawerHeader({ onEdit }: { onEdit: () => void }) {
           onOpenChange={setIsStageSelectOpen}
           value={stage}
           onValueChange={(v) => {
+            if (v === "AWAITING_PAYMENT") {
+              const isClientInfoComplete = pan && dob && riskProfile;;
+              const hasUploadedContract = !!client?.original_document_url;
+
+              if (!isClientInfoComplete || !hasUploadedContract) {
+                const missingFields = [];
+                if (!pan) missingFields.push("PAN");
+                if (!dob) missingFields.push("DOB");
+                if (!riskProfile) missingFields.push("Risk Profile");
+                if (!hasUploadedContract)
+                  missingFields.push("Uploaded Contract");
+
+                const message = `Cannot move to 'Awaiting Payment'. Missing: ${missingFields.join(
+                  ", "
+                )}`;
+
+                showToast({
+                  title: "Contract and Client details are incomplete",
+                  description: message,
+                  type: "warning",
+                  duration: 5000,
+                });
+
+                return;
+              }
+            }
             setStage(v as any);
           }}
         >

@@ -165,7 +165,7 @@ export default function OnboardTab() {
       {/* Plan Details */}
       <div className="rounded-lg border border-[#e4e7ec] p-4">
         <div className="mb-3 text-sm font-medium text-[#344054]">
-          Plan details
+          Client details
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Risk Profile Select */}
