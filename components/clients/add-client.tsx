@@ -27,10 +27,15 @@ import {
   bulkCreateClientsAPI,
   getAllUsers,
 } from "@/services/clients"; // Import bulkCreateLeadsAPI
-import { EditableClient, RMUser } from "@/constants/types";
+import { EditableClient, RMUser, SubscriptionType } from "@/constants/types";
 import Papa from "papaparse"; // Import PapaParse
 import { downloadCSV } from "@/lib/utils"; // Import downloadCSV utility
 import { isClientBulkUploadEnable } from "@/utils/featureFlags";
+import { getPlansAPI, PlanType } from "@/services/plan";
+import { getNextRenewalDate, renewalPeriodMap, Renewal } from "@/utils/date";
+import { createSubscriptionAPI } from "@/services/subscription";
+import { USER_DATA_KEY, userAtom } from "@/hooks/user-atom";
+import { useAtom } from "jotai";
 
 type Props = {
   open: boolean;
@@ -51,6 +56,10 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [plan, setPlan] = useState<string>("");
   const [date, setDate] = useState<string>("");
+  const [plans, setPlans] = useState<PlanType[]>([]);
+  const [planId, setPlanId] = useState<string>(""); // store ID not name
+  const [renewal, setRenewal] = useState<Renewal>("Monthly");
+  const [user, setUser] = useAtom(userAtom);
 
   // New state variables for bulk upload UI
   const [uploadState, setUploadState] = useState<
@@ -92,6 +101,28 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
     fetchRms();
   }, []);
 
+  useEffect(() => {
+    async function fetchPlans() {
+      try {
+        const fetched = await getPlansAPI();
+        setPlans(fetched);
+        if (fetched.length > 0) {
+          setPlanId(String(fetched[0].id)); // store the ID, not name
+        }
+        console.log(fetched);
+      } catch (err) {
+        console.error("Error fetching plans:", err);
+        showToast({
+          title: "Error",
+          description: "Could not load plans",
+          type: "error",
+        });
+      }
+    }
+
+    fetchPlans();
+  }, []);
+
   const isValidDate = (dateStr: string): boolean => {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(dateStr)) return false;
@@ -116,7 +147,6 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
     const regex = /^[A-Za-z\s\-]+$/;
     return regex.test(name.trim());
   }
- 
 
   function isValidEmail(email: string) {
     return /\S+@\S+\.\S+/.test(email);
@@ -206,7 +236,7 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
       });
       return;
     }
-    if (!plan) {
+    if (!planId) {
       showToast({
         title: "Validation Error",
         description: "Plan has not been selected.",
@@ -247,16 +277,27 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
       return;
     }
 
+    const selectedPlan = plans.find((pl) => String(pl.id) === String(planId));
+    const selectedPlanName = selectedPlan?.name;
+    if (selectedPlan && selectedPlan.renewal_period) {
+      const mappedRenewal = renewalPeriodMap[selectedPlan.renewal_period];
+      setRenewal(mappedRenewal);
+    } else {
+      setRenewal("Monthly");
+    }
+
     const lead: EditableClient = {
       first_name: firstName,
       last_name: lastName,
       phone_number: phoneNumber,
       risk: risk,
       assigned_rm: assigned_RM,
-      organisation: 1,
+      organisation: user?.organisation as number,
       dob: date,
       is_converted_to_client: true,
+      plan: String(selectedPlan?.type),
     };
+
     setSending(true);
     try {
       const response = await importClientAPI(lead);
@@ -266,6 +307,41 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
         type: "success",
         duration: 4000,
       });
+      console.log("Selected plan:", selectedPlan);
+
+      const payload: SubscriptionType = {
+        plan: String(selectedPlan?.id),
+        client: response.id,
+        created_by: String(user?.id), // Replace with actual user id or context
+        is_active: true,
+        start_date: new Date().toISOString().slice(0, 10), // today in yyyy-mm-dd
+        end_date: getNextRenewalDate(renewal),
+        amount_paid: selectedPlan?.price || "0",
+        client_email: response.email,
+        plan_name: selectedPlan?.name!,
+      };
+
+      try {
+        const savedSubscription = await createSubscriptionAPI(payload);
+        console.log("Saved subscription:", savedSubscription);
+        showToast({
+          title: "Success",
+          description: "Subscription started",
+          type: "success",
+        });
+        showToast({
+          title: "Success",
+          description: "Client subscription updated",
+          type: "success",
+        });
+      } catch (error) {
+        console.error(error);
+        showToast({
+          title: "Error",
+          description: "Failed to update subscription",
+          type: "error",
+        });
+      }
       refreshClients();
     } catch (e) {
       showToast({
@@ -586,38 +662,66 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
                 </div>
               </div>
 
-              <div className="space-y-1.5 ">
+              <div className="space-y-1.5">
                 <Label className="text-sm text-[#344054]">
                   Selected plan <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   open={isPlanSelectedSelectOpen}
                   onOpenChange={setIsPlanSelectedSelectOpen}
-                  value={plan}
-                  onValueChange={setPlan}
+                  value={planId}
+                  onValueChange={setPlanId}
                 >
                   <SelectTrigger className="h-10 rounded-md border-[#e4e7ec] w-full">
-                    <SelectValue placeholder="Elite" />
+                    <SelectValue>
+                      {!planId
+                        ? plans.length === 0
+                          ? "Loading plans..."
+                          : "Select a plan"
+                        : plans.find((pl) => String(pl.id) === planId)?.name}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="STANDARD">Standard</SelectItem>
-                    <SelectItem value="PREMIUM">Premium</SelectItem>
-                    <SelectItem value="ELITE">Elite</SelectItem>
+                    {plans.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-gray-500">
+                        Loading plans...
+                      </div>
+                    ) : (
+                      plans.map((pl) => (
+                        <SelectItem key={pl.id} value={String(pl.id)}>
+                          {pl.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5 relative">
+
+              <div className="space-y-1.5">
                 <Label className="text-sm text-[#344054]">
                   DOB <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  placeholder={`      yyyy-mm-dd`}
-                  className="h-10 rounded-md border-[#e4e7ec]"
-                />
-                {date === "" && (
-                  <Calendar className="absolute left-3 top-20/38 text-gray-400 size-4" />
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="h-10 rounded-md border-[#e4e7ec] flex-grow"
+                    max="2007-12-31"
+                    min="1925-01-01"
+                  />
+                  {date === "" && (
+                    <Calendar
+                      className="text-gray-400"
+                      size={20}
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
+                {!isValidDate(date) && date !== "" && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Invalid date format or out of range
+                  </p>
                 )}
               </div>
             </div>

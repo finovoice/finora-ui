@@ -19,6 +19,7 @@ import {
 } from "@/services/plan";
 import { useAtom } from "jotai";
 import { userAtom } from "@/hooks/user-atom";
+import { showToast } from "@/components/ui/toast-manager";
 
 type SettingsTab = "Organization" | "User profile";
 
@@ -339,20 +340,44 @@ export default function SettingsPage() {
                   setPlans((prev) =>
                     prev.map((p) => (p.id === data.id ? { ...p, ...data } : p))
                   );
+
+                  showToast({
+                    title: "Plan Updated",
+                    description: "The plan was updated successfully.",
+                    type: "success",
+                    duration: 3000,
+                  });
                 } else {
-                  console.log(data);
                   // Prevent duplicate renewal_period plans for same org/type
                   const existingPlan = plans.find(
                     (p) =>
-                      p.organisation === 1 &&
-                      p.type === (p.name.split(" ")[0] || p.name.split("-")[0])
+                      p.organisation === user?.organisation &&
+                      p.type === data.type && // safer than string splitting
+                      p.renewal_period === data.renewal_period
                   );
 
                   if (existingPlan) {
-                    alert("Plan with this renewal period already exists!");
+                    showToast({
+                      title: "Duplicate Plan",
+                      description:
+                        "A plan with this type and renewal period already exists.",
+                      type: "warning",
+                      duration: 3000,
+                    });
                     return;
                   }
-                  console.log(data);
+                  const existingName = plans.find(
+                    (p) => p.name === data.name // also check name to avoid duplicates
+                  );
+                  if (existingName) {
+                    showToast({
+                      title: "Duplicate Plan Name",
+                      description: "A plan with this Name already exists.",
+                      type: "warning",
+                      duration: 3000,
+                    });
+                    return;
+                  }
 
                   // Create new plan
                   const created = await createPlanAPI({
@@ -364,24 +389,32 @@ export default function SettingsPage() {
                     type: data.type!,
                   });
 
-                  setPlans((prev) => [
-                    ...prev,
-                    {
-                      id: created.id,
-                      name: created.name,
-                      price: created.price,
-                      renewal_period: created.renewal_period,
-                      organisation: created.organisation,
-                      type: created.type,
-                      is_active: created.is_active,
-                    },
-                  ]);
+                  setPlans((prev) => [...prev, created]);
+
+                  showToast({
+                    title: "Plan Created",
+                    description: "A new plan was created successfully.",
+                    type: "success",
+                    duration: 3000,
+                  });
                 }
 
                 setPlanDialogOpen(false);
                 setEditingPlan(null);
-              } catch (error) {
-                alert("Failed to save plan.");
+              } catch (error: any) {
+                const message =
+                  error?.response?.data?.errors?.non_field_errors?.[0] ||
+                  error?.response?.data?.errors?.name?.[0] ||
+                  error?.response?.data?.detail ||
+                  "An unexpected error occurred.";
+
+                showToast({
+                  title: "Error",
+                  description: message,
+                  type: "error",
+                  duration: 3000,
+                });
+
                 console.error(error);
               }
             }}

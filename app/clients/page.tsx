@@ -33,6 +33,7 @@ import AddClient from "@/components/clients/add-client";
 import { getSubscriptionByClientIDAPI } from "@/services/subscription";
 import LoadingEllipsis from "@/components/ui/loading-ellipsis";
 import { useClients } from "@/contexts/ClientsContext";
+import { PlanType } from "@/utils/date";
 
 export default function ClientsPage() {
   const {
@@ -57,6 +58,10 @@ export default function ClientsPage() {
   const [selectedRenewal, setSelectedRenewal] = useState<string>(""); // Changed to single string
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none");
+
+  const [subscriptions, setSubscriptions] = useState<
+    Record<string, SubscriptionType[]>
+  >({});
 
   const refreshSubscriptions = async (clientID: string) => {
     try {
@@ -168,6 +173,46 @@ export default function ClientsPage() {
     setSelectedRenewal(""); // Reset to empty string
     setSearchQuery("");
   };
+
+  useEffect(() => {
+    async function fetchAllSubscriptions() {
+      try {
+        const subs: Record<string, SubscriptionType[]> = {};
+        for (const client of clients) {
+          try {
+            const res = await getSubscriptionByClientIDAPI(client.id);
+            subs[client.id] = Array.isArray(res) ? res : [];
+          } catch (err) {
+            console.error(
+              "Error fetching subscription for client",
+              client.id,
+              err
+            );
+            subs[client.id] = [];
+          }
+        }
+        setSubscriptions(subs);
+      } catch (error) {
+        console.error("Failed to fetch all subscriptions:", error);
+      }
+    }
+
+    if (clients.length > 0) fetchAllSubscriptions();
+  }, [clients]);
+
+  const activeSubscription = useMemo(() => {
+    return subscription.find((sub) => sub.is_active);
+  }, [subscription]);
+
+  function formatDate(dateStr?: string | null): string {
+    if (!dateStr) return "—";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[#f9fafb] text-[#101828]">
@@ -432,7 +477,8 @@ export default function ClientsPage() {
                   {filteredClients.map((c) => (
                     <li
                       key={c.id}
-                      className="grid grid-cols-[1fr_2.8fr_1fr_0.8fr_64px] items-center px-4 py-3"
+                      onClick={() => openActionsDrawer(c)}
+                      className="grid grid-cols-[1fr_2.8fr_1fr_0.8fr_64px] items-center px-4 py-3 cursor-pointer hover:bg-[#f9fafb]"
                     >
                       {/* Client */}
                       <div className="min-w-0">
@@ -448,29 +494,52 @@ export default function ClientsPage() {
                       </div>
 
                       {/* Plan + progress + label */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex flex-col w-full gap-1">
-                          <div className="min-w-[72px] shrink-0 text-sm font-semibold text-[#475467]">
-                            {toSentenceCase(c.plan)}
-                          </div>
-                          <div className="relative h-1.5 w-full rounded-full bg-[#e5e7eb]">
-                            <div
-                              className="absolute left-0 top-0 h-1.5 rounded-full bg-gray-700"
-                              style={{ width: `${progressPct(c)}%` }}
-                              aria-label="elapsed"
-                            />
-                          </div>
+                      {!subscriptions[c.id] ? (
+                        <div className="text-xs text-[#98a2b3]">Loading...</div>
+                      ) : subscriptions[c.id].length === 0 ? (
+                        <div className="text-xs text-[#b54708]">
+                          No subscriptions
                         </div>
+                      ) : (
+                        (() => {
+                          const activeSub = subscriptions[c.id].find(
+                            (sub) => sub.is_active
+                          );
+                          return activeSub ? (
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col w-full gap-1">
+                                <div className="min-w-[72px] shrink-0 text-sm font-semibold text-[#475467]">
+                                  {toSentenceCase(c.plan)}
+                                </div>
+                                <div className="relative h-1.5 w-full rounded-full bg-[#e5e7eb]">
+                                  <div
+                                    className="absolute left-0 top-0 h-1.5 rounded-full bg-gray-700"
+                                    style={{
+                                      width: `${progressPct(activeSub)}%`,
+                                    }}
+                                    aria-label="elapsed"
+                                  />
+                                </div>
+                              </div>
 
-                        <div className="shrink-0 text-right text-xs mr-6 text-[#344054]">
-                          <div className="leading-4 flex flex-col items-center">
-                            <span className="text-[#667085]">Renewal in</span>{" "}
-                            <span className="font-semibold">
-                              {daysLeft(c)} days
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                              <div className="shrink-0 text-right text-xs mr-6 text-[#344054]">
+                                <div className="leading-4 flex flex-col items-center">
+                                  <span className="text-[#667085]">
+                                    Renewal in
+                                  </span>{" "}
+                                  <span className="font-semibold">
+                                    {daysLeft(activeSub)} days
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-[#b54708]">
+                              No active subscription
+                            </div>
+                          );
+                        })()
+                      )}
 
                       {/* RM */}
                       <div className="text-sm text-[#475467]">
@@ -488,7 +557,10 @@ export default function ClientsPage() {
                           className="relative rounded-md p-2 text-[#667085] hover:bg-[#f2f4f7]"
                           aria-label="Open actions"
                           title="Open actions"
-                          onClick={() => openActionsDrawer(c)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // prevent triggering row onClick
+                            openActionsDrawer(c);
+                          }}
                         >
                           <MessageSquare className="h-4 w-4" />
                         </button>
@@ -508,13 +580,16 @@ export default function ClientsPage() {
                       disabled={loading}
                     >
                       {[5, 10, 20, 50].map((n) => (
-                        <option key={n} value={n}>{n}</option>
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div className="flex items-center gap-3">
                     <span>
-                      Page {pagination.currentPage} of {Math.max(1, pagination.totalPages || 1)}
+                      Page {pagination.currentPage} of{" "}
+                      {Math.max(1, pagination.totalPages || 1)}
                     </span>
                     <div className="flex items-center gap-1">
                       <Button
@@ -529,12 +604,16 @@ export default function ClientsPage() {
                         variant="outline"
                         className="h-8"
                         onClick={() => goToPage(pagination.currentPage + 1)}
-                        disabled={loading || (pagination.totalPages > 0 && pagination.currentPage >= pagination.totalPages)}
+                        disabled={
+                          loading ||
+                          (pagination.totalPages > 0 &&
+                            pagination.currentPage >= pagination.totalPages)
+                        }
                       >
                         Next
                       </Button>
+                    </div>
                   </div>
-                </div>
                 </div>
               </div>
             )}
@@ -576,45 +655,50 @@ function FilterButton({ label }: { label: string }) {
   );
 }
 
+// Safely parse a date string into a Date object, or return null if invalid
 function parseDate(s?: string | null): Date | null {
   if (!s) return null;
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }
 
+// Get difference in whole days between two Date objects
 function diffDays(a: Date, b: Date): number {
   const msPerDay = 1000 * 60 * 60 * 24;
   return Math.floor((b.getTime() - a.getTime()) / msPerDay);
 }
 
-function totalDays(c: ClientType): number {
-  const start = parseDate(c.start_date);
-  const end = parseDate(c.end_date);
+// Calculate total number of days between start_date and end_date
+function totalDays(c: ClientType | SubscriptionType): number {
+  const start = parseDate(c?.start_date);
+  const end = parseDate(c?.end_date);
   if (start && end) {
     const total = diffDays(start, end);
-    return Math.max(1, total);
+    return Math.max(1, total); // Ensure at least 1 day
   }
-  return 30;
+  return 30; // Default to 30 days if dates are missing or invalid
 }
 
-function daysLeft(c: ClientType): number {
+// Calculate number of days left until end_date from today
+function daysLeft(c: ClientType | SubscriptionType): number {
   const today = new Date();
-  const end = parseDate(c.end_date);
+  const end = parseDate(c?.end_date);
   if (end) {
     return Math.max(0, diffDays(today, end));
   }
-  return totalDays(c);
+  return totalDays(c); // Fallback if end_date is missing
+}
+
+// Calculate progress percentage of elapsed days between start and end
+function progressPct(c: SubscriptionType): number {
+  const total = totalDays(c);
+  const elapsed = Math.max(total - daysLeft(c), 0);
+  const pct = (elapsed / total) * 100;
+  return Math.max(2, Math.min(100, pct)); // Clamp between 2% and 100%
 }
 
 function displayName(c: ClientType): string {
   const parts = [c.first_name?.trim(), c.last_name?.trim()].filter(Boolean);
   const name = parts.join(" ").trim();
   return name || c.profile || c.email || c.phone_number || String(c.id);
-}
-
-function progressPct(c: ClientType) {
-  const total = totalDays(c);
-  const elapsed = Math.max(total - daysLeft(c), 0);
-  const pct = (elapsed / total) * 100;
-  return Math.max(2, Math.min(100, pct));
 }

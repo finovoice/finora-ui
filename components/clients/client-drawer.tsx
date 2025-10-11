@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -32,25 +33,44 @@ import TradeHeader from "@/components/trades/trade-header";
 import TradeStat from "@/components/trades/trade-stat";
 import DateStack from "@/components/trades/date-stack";
 import ExpiryGauge from "@/components/ui/expiry-gauge";
+import { Label } from "@radix-ui/react-label";
+import LoadingSpinner from "../ui/loading-spinner";
+import { format, parseISO } from "date-fns";
+
+/* ----- Types ----- */
 import {
   ClientType,
   EditableClient,
   SubscriptionType,
 } from "@/constants/types";
-import { useEffect, useState } from "react";
-import EditClient from "./edit-client";
-import { Label } from "@radix-ui/react-label";
+
+/* ----- Services ----- */
 import { editLeadAPI, uploadContractAPI } from "@/services/clients";
-import { showToast } from "../ui/toast-manager";
-import { format, parseISO } from "date-fns";
-import { getSubscriptionByClientIDAPI } from "@/services/subscription";
+import { createSubscriptionAPI } from "@/services/subscription";
+import { createSignedUrlAPI } from "@/services/upload";
+
+/* ----- Other components/dialogs ----- */
+import EditClient from "./edit-client";
 import { RenewalConfirmationDialog } from "./renewal-confirmation-dialog";
+import { showToast } from "../ui/toast-manager";
+
+/* ----- Subscription helpers (your existing libs) ----- */
 import { getCurrentSubscriptionFromList } from "@/lib/getCurrentSubscriptionFromList";
 import { getFutureSubscriptionsFromList } from "@/lib/getFutureSubscriptionFromList";
-import LoadingSpinner from "../ui/loading-spinner";
 import { getPastSubscriptionFromList } from "@/lib/getPastSubscriptionFromList";
-import { createSignedUrlAPI } from '@/services/upload'
-import { AsyncResource } from "async_hooks";
+import { getNextRenewalDate, Renewal, renewalPeriodMap } from "@/utils/date";
+import { getPlansAPI, PlanType } from "@/services/plan";
+
+/* ----- Select component (assumed present in your ui library) ----- */
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { USER_DATA_KEY, userAtom } from "@/hooks/user-atom";
+import { useAtom } from "jotai";
 
 export default function ClientDrawer({
   open,
@@ -69,12 +89,13 @@ export default function ClientDrawer({
   refreshClients: () => void;
   refreshSubscriptions: (clientID: string) => void;
 }) {
-  const [tab, setTab] = useState("renewals");
+  /* UI state */
+  const [tab, setTab] = useState<string>("renewals");
   const [editClient, setEditClient] = useState<boolean>(false);
   const [sending, setSending] = useState<boolean>(false);
   const [text, setText] = useState<string>("");
 
-
+  /* subscription slices */
   const [currentSubscription, setCurrentSubscription] =
     useState<SubscriptionType | null>(null);
   const [futureSubscriptions, setFutureSubscriptions] = useState<
@@ -86,45 +107,78 @@ export default function ClientDrawer({
   const [currentFuturePlanIndex, setCurrentFuturePlanIndex] =
     useState<number>(0);
 
-  const [showRenewalDialog, setShowRenewalDialog] = useState<boolean>(false);
   const [subscriptionRefreshing, setSubscriptionRefreshing] =
     useState<boolean>(true);
 
-  let first_name = client?.first_name ?? "Not Set";
-  let last_name = client?.last_name ?? "Not Set";
-  let phone = client?.phone_number ?? "Loading...";
-  let email = client?.email ?? "Email not set";
-  let plan = client?.plan ?? "Not Set";
-  let risk = client?.risk ?? "Setting";
+  /* upload state */
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
+  /* local copy of client so UI updates after contract upload */
+  const [localClient, setLocalClient] = useState<ClientType>(client);
+
+  /* plans & selection */
+  const [plans, setPlans] = useState<PlanType[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
+
+  /* renewal dialog */
+  const [showRenewalDialog, setShowRenewalDialog] = useState<boolean>(false);
+  const [renewal, setRenewal] = useState<Renewal>("Monthly");
+
+  /* readable fields derived */
+  const first_name = client?.first_name ?? "Not Set";
+  const last_name = client?.last_name ?? "Not Set";
+  const phone = client?.phone_number ?? "Loading...";
+  const email = client?.email ?? "Email not set";
+  const planName = client?.plan ?? "Not Set";
+  const risk = client?.risk ?? "Setting";
+  const [user, setUser] = useAtom(userAtom);
+
+  /* on mount: fetch plans */
+  useEffect(() => {
+    async function fetchPlans() {
+      try {
+        const fetched = await getPlansAPI();
+        setPlans(Array.isArray(fetched) ? fetched : []);
+      } catch (err) {
+        console.error("fetchPlans error", err);
+        showToast({
+          title: "Error",
+          description: "Failed to load plans.",
+          type: "error",
+        });
+      }
+    }
+    fetchPlans();
+  }, []);
+
+  /* subscription list derived slices */
   useEffect(() => {
     setCurrentSubscription(getCurrentSubscriptionFromList(subscriptionList));
     setFutureSubscriptions(getFutureSubscriptionsFromList(subscriptionList));
     setPastSubscriptions(getPastSubscriptionFromList(subscriptionList));
+    setSubscriptionRefreshing(false);
   }, [subscriptionList]);
 
+  /* when drawer opens, refresh subscriptions for client */
   useEffect(() => {
     if (open) {
       setTab("renewals");
-      first_name = client?.first_name ?? "Not Set";
-      last_name = client?.last_name ?? "Not Set";
-      phone = client?.phone_number ?? "Loading...";
-      email = client?.email ?? "Email not set";
-      plan = client?.plan ?? "Not Set";
-      risk = client?.risk ?? "Setting";
+      setSubscriptionRefreshing(true);
+      // call parent to refresh subscriptions (parent implements refreshSubscriptions)
       refreshSubscriptions(client?.id);
+      // sync text with client.notes
+      setText(client?.notes ?? "");
     } else {
       setSubscriptionList([]);
     }
   }, [client?.id, open]);
 
-  const [isUploading, setIsUploading] = useState(false);
-  const [localClient, setLocalClient] = useState<ClientType>(client);
-
-  // When client prop changes, sync localClient
+  /* sync local client */
   useEffect(() => {
     setLocalClient(client);
   }, [client]);
+
+  /* ---------- Handlers ---------- */
 
   const handleContractUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -133,47 +187,145 @@ export default function ClientDrawer({
     if (!file || !client?.id) return;
 
     setIsUploading(true);
-
     try {
-      // Call uploadContractAPI directly
-      const updatedClient = await uploadContractAPI(file, client.id);
-      setLocalClient(updatedClient);
-      refreshClients(); // or refreshClients() or similar
-      alert("Uploaded sucessfully");
-    } catch (error) {
-      console.error(error);
+      const updated = await uploadContractAPI(file, client.id);
+      // uploadContractAPI expected to return updated client object
+      if (updated) {
+        setLocalClient(updated);
+        refreshClients();
+        showToast({
+          title: "Success",
+          description: "Contract uploaded",
+          type: "success",
+        });
+      } else {
+        showToast({
+          title: "Warning",
+          description: "Upload returned no client",
+          type: "warning",
+        });
+      }
+    } catch (err) {
+      console.error("handleContractUpload", err);
+      showToast({
+        title: "Error",
+        description: "Failed to upload contract",
+        type: "error",
+      });
     } finally {
       setIsUploading(false);
+      // clear input value to allow re-upload same file if needed
+      if (e.target) e.target.value = "";
     }
   };
 
-  function cancelFutureSubscription() {}
-
   async function handleEditClientSubmit() {
     const editableClient: EditableClient = {
-      ...(text != client.notes ? { notes: text } : {}),
+      ...(text !== client?.notes ? { notes: text } : {}),
     };
 
     setSending(true);
-
     try {
-      const response = await editLeadAPI(editableClient, client.id);
+      await editLeadAPI(editableClient, client.id);
       showToast({
         title: "Success",
-        description: "Lead successfully edited",
+        description: "Lead edited",
         type: "success",
       });
-    } catch (e) {
+      refreshClients();
+    } catch (err) {
+      console.error("handleEditClientSubmit", err);
       showToast({
         title: "Error",
-        description: "An error has occured",
-        type: "warning",
+        description: "Failed to edit lead",
+        type: "error",
       });
-      return;
     } finally {
       setSending(false);
     }
   }
+
+  async function handleAddSubscription() {
+    if (!selectedPlan || !client?.id) {
+      showToast({
+        title: "Missing",
+        description: "Select a plan first",
+        type: "error",
+      });
+      return;
+    }
+
+    const selectedPlanObj = plans.find(
+      (p) => String(p.id) === String(selectedPlan)
+    );
+
+    if (!selectedPlanObj?.renewal_period) {
+      showToast({
+        title: "Error",
+        description: "Plan renewal period is missing or invalid.",
+        type: "error",
+      });
+      return;
+    }
+
+    const mappedRenewal = renewalPeriodMap[selectedPlanObj.renewal_period];
+    setRenewal(mappedRenewal);
+
+    setSending(true);
+
+    try {
+      /* Build payload — adjust keys if your backend expects different */
+      const payload: Partial<SubscriptionType> = {
+        plan: String(selectedPlan), // plan id as string
+        client: client.id,
+        created_by: String(user?.id), // Replace with actual user id / context
+        is_active: true,
+        start_date: new Date().toISOString().slice(0, 10),
+        end_date: getNextRenewalDate(renewal),
+        amount_paid: selectedPlanObj?.price || "0",
+        client_email: client.email,
+        plan_name: selectedPlanObj?.name ?? "",
+      };
+
+      const saved = await createSubscriptionAPI(payload as SubscriptionType);
+      if (saved) {
+        showToast({
+          title: "Success",
+          description: "Subscription created",
+          type: "success",
+        });
+        // refresh parent data
+        refreshClients();
+        refreshSubscriptions(client.id);
+        // reset selection
+        setSelectedPlan("");
+      } else {
+        showToast({
+          title: "Error",
+          description: "No subscription returned",
+          type: "error",
+        });
+      }
+    } catch (err: any) {
+      console.error("handleAddSubscription", err);
+      const message =
+        err?.response?.data?.message ?? "Failed to create subscription";
+      showToast({ title: "Error", description: message, type: "error" });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function cancelFutureSubscription() {
+    // placeholder — implement backend cancel flow
+    showToast({
+      title: "Info",
+      description: "Cancel future subscription: not implemented",
+      type: "info",
+    });
+  }
+
+  /* ---------- Render ---------- */
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -196,6 +348,7 @@ export default function ClientDrawer({
                 <PencilLine className="h-4 w-4" />
               </button>
             </div>
+
             <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-[#475467]">
               <div className="inline-flex items-center gap-2">
                 <Phone className="h-4 w-4 text-[#98a2b3]" />
@@ -207,8 +360,9 @@ export default function ClientDrawer({
               </div>
             </div>
           </div>
+
           <div className="ml-4 flex items-start gap-2">
-            <Badge text={plan} />
+            <Badge text={planName} />
             <Badge text={risk ?? ""} />
           </div>
         </div>
@@ -228,18 +382,19 @@ export default function ClientDrawer({
               <Tab value="notes" label="Notes" />
             </TabsList>
           </div>
+
           <div className="flex-1 overflow-y-auto thin-scrollbar">
+            {/* Chat tab (placeholder) */}
             <TabsContent
               value="chat"
               className="px-6 py-5 text-sm text-[#667085]"
             >
               Coming soon.
             </TabsContent>
+
+            {/* Trades tab (example content) */}
             <TabsContent value="trades" className="space-y-4 px-6 py-5">
               <TradeFilters />
-
-              {/* Example future trade (collapsed header style) */}
-
               <div className="rounded-lg border border-[#e4e7ec] bg-white">
                 <TradeHeader
                   order="BUY"
@@ -284,14 +439,12 @@ export default function ClientDrawer({
                 </TradeHeader>
               </div>
 
-              {/* Section divider: Exited */}
               <div className="flex items-center gap-3 px-2">
                 <div className="h-px w-full bg-[#e4e7ec]" />
                 <div className="text-xs text-[#667085]">Exited</div>
                 <div className="h-px w-full bg-[#e4e7ec]" />
               </div>
 
-              {/* Example exited trade (accordion style, same as Trade) */}
               <div className="rounded-lg border border-[#e4e7ec] bg-white">
                 <TradeHeader
                   order="BUY"
@@ -336,7 +489,6 @@ export default function ClientDrawer({
                 </TradeHeader>
               </div>
 
-              {/* Footer controls */}
               <div className="flex items-center justify-between border-t border-[#e4e7ec] px-2 pt-4">
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm">
@@ -351,8 +503,10 @@ export default function ClientDrawer({
                 </div>
               </div>
             </TabsContent>
+
+            {/* Contract tab */}
             <TabsContent value="contract" className="px-6 py-5">
-              {client.original_document_url ? (
+              {localClient?.original_document_url ? (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center mb-3">
                     <div className="text-sm font-medium text-[#344054]">
@@ -377,6 +531,7 @@ export default function ClientDrawer({
                       />
                     </div>
                   </div>
+
                   <ContractViewer
                     url={localClient.original_document_url!}
                     fileName={`${localClient.first_name}_${localClient.last_name}_contract.pdf`}
@@ -412,9 +567,10 @@ export default function ClientDrawer({
               )}
             </TabsContent>
 
+            {/* Notes tab */}
             <TabsContent
               value="notes"
-              className="px-6 py-5  text-sm text-[#667085]"
+              className="px-6 py-5 text-sm text-[#667085]"
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -458,7 +614,7 @@ export default function ClientDrawer({
                   <Button
                     className="w-full"
                     onClick={handleEditClientSubmit}
-                    disabled={sending || text === client.notes || text === ""}
+                    disabled={sending || text === client?.notes || text === ""}
                   >
                     {sending ? "Saving..." : "Save"}
                   </Button>
@@ -466,35 +622,42 @@ export default function ClientDrawer({
               </div>
             </TabsContent>
 
-            {/* Renewals */}
+            {/* Renewals tab */}
             <TabsContent value="renewals" className="space-y-6 px-6 py-3">
               {/* Active plan card */}
               <div className="rounded-lg border border-[#e4e7ec] bg-white">
                 <div className="flex items-center justify-between border-b border-[#f2f4f7] px-5 py-3">
                   <div className="text-xs font-medium text-[#667085]">
-                    {plan === "Not Set" ? "No " : ""}Active Plan
+                    {planName === "Not Set" ? "No " : ""}Active Plan
                   </div>
-                  {
+
+                  {!futureSubscriptions || futureSubscriptions.length === 0 ? (
                     <button
                       className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-[#344054] hover:bg-[#f2f4f7]"
                       onClick={() => setShowRenewalDialog(true)}
+                      aria-label={
+                        planName === "Not Set" ? "Add Plan" : "Renew Plan"
+                      }
                     >
-                      {plan === "Not Set" ? (
+                      {planName === "Not Set" ? (
                         <PlusSquare className="h-4 w-4" />
                       ) : (
                         <RefreshCcw className="h-4 w-4" />
                       )}
-                      {plan === "Not Set" ? "Add Plan" : "Renew"}
+                      {planName === "Not Set" ? "Add Plan" : "Renew"}
                     </button>
-                  }
+                  ) : null}
                 </div>
-                {plan === "Not Set" ? (
-                  ""
+
+                {planName === "Not Set" ? null : subscriptionRefreshing ? (
+                  <div className="pl-5 p-3 mb-20 text-sm text-gray-600 flex flex-row items-left gap-2">
+                    Loading <LoadingSpinner />
+                  </div>
                 ) : currentSubscription ? (
                   <div className="grid grid-cols-1 gap-6 px-5 py-3 pb-0 sm:grid-cols-[1fr_auto]">
                     <div className="space-y-4">
                       <div className="text-base font-semibold text-[#101828]">
-                        {plan}
+                        {planName}
                       </div>
                       <div className="flex flex-row gap-4 p-4 justify-between">
                         <Info
@@ -508,17 +671,17 @@ export default function ClientDrawer({
                         <Info
                           label="Amount Received"
                           value={`₹ ${
-                            currentSubscription?.amount_paid ?? "None"
+                            currentSubscription.amount_paid ?? "None"
                           }/-`}
                         />
                       </div>
                     </div>
                     <div className="flex items-center justify-center">
-                      {currentSubscription?.start_date &&
+                      {currentSubscription.start_date &&
                         currentSubscription.end_date && (
                           <ExpiryGauge
                             daysLeft={Math.floor(
-                              (Date.parse(currentSubscription?.end_date) -
+                              (Date.parse(currentSubscription.end_date) -
                                 Date.now()) /
                                 86400000
                             )}
@@ -528,46 +691,90 @@ export default function ClientDrawer({
                                 86400000
                             )}
                           />
-                        )}{" "}
+                        )}
                     </div>
                   </div>
                 ) : (
-                  <div className="pl-5 p-3 mb-20 text-sm text-gray-600 flex flex-row items-left gap-2">
-                    Loading <LoadingSpinner />
-                  </div>
+                  <>
+                    <div className="pl-5 p-3 mb-20 text-sm text-gray-600">
+                      No active subscription found
+                    </div>
+                    <div className="rounded-lg border border-[#e4e7ec] bg-white px-5 py-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Select
+                          value={selectedPlan}
+                          onValueChange={(v) => setSelectedPlan(v)}
+                        >
+                          <SelectTrigger className="w-[240px]">
+                            <SelectValue placeholder="Select a plan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {plans.map((p) => (
+                              <SelectItem
+                                key={String(p.id)}
+                                value={String(p.id)}
+                              >
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          onClick={handleAddSubscription}
+                          disabled={sending}
+                        >
+                          {sending ? "Adding..." : "Add Subscription"}
+                        </Button>
+                      </div>
+
+                      <div className="border-t pt-2">
+                        {pastSubscriptions && pastSubscriptions.length > 0 ? (
+                          <div
+                            className={`${
+                              pastSubscriptions.length > 3
+                                ? "max-h-64 overflow-y-auto pr-2 thin-scrollbar"
+                                : ""
+                            }`}
+                          >
+                            {pastSubscriptions.map((sub, idx) => (
+                              <Row
+                                key={sub.id ?? idx}
+                                plan={
+                                  sub.plan_type ?? sub.plan_name ?? "Unknown"
+                                }
+                                period={`${formatDateToReadable(
+                                  sub.start_date
+                                )} - ${formatDateToReadable(sub.end_date)}`}
+                                amount={`₹ ${sub.amount_paid ?? "None"}/-`}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="py-3 text-sm text-gray-500">
+                            No past plans.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
 
-              {/* Future plan card */}
+              {/* Future plan card (carousel) */}
               {futureSubscriptions && futureSubscriptions.length > 0 ? (
                 <div className="relative h-[135px] overflow-hidden">
-                  {" "}
-                  {/* Added h-[180px] and overflow-hidden */}
                   {futureSubscriptions.map((sub, index) => {
                     const isActive = index === currentFuturePlanIndex;
-                    const isPrevious =
-                      index ===
-                      (currentFuturePlanIndex -
-                        1 +
-                        futureSubscriptions.length) %
-                        futureSubscriptions.length;
-                    const isNext =
-                      index ===
-                      (currentFuturePlanIndex + 1) % futureSubscriptions.length;
-
                     let translateXValue = "0%";
-                    if (!isActive) {
-                      if (index < currentFuturePlanIndex) {
-                        translateXValue = "-100%"; // Cards to the left
-                      } else {
-                        translateXValue = "100%"; // Cards to the right
-                      }
-                    }
+                    if (!isActive)
+                      translateXValue =
+                        index < currentFuturePlanIndex ? "-100%" : "100%";
 
                     return (
                       <div
-                        key={index}
-                        className={`rounded-lg border border-[#e4e7ec] bg-white absolute top-0 left-0 w-full transition-all duration-300 ease-in-out`}
+                        key={sub.id ?? index}
+                        className="rounded-lg border border-[#e4e7ec] bg-white absolute top-0 left-0 w-full transition-all duration-300 ease-in-out"
                         style={{
                           transform: `translateX(${translateXValue})`,
                           opacity: isActive ? 1 : 0,
@@ -580,13 +787,13 @@ export default function ClientDrawer({
                             <div className="text-xs font-medium text-[#667085]">
                               Upcoming Plan
                             </div>
-                            {futureSubscriptions.length > 1 && (
+                            {futureSubscriptions.length > 1 ? (
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() =>
                                     setCurrentFuturePlanIndex(
-                                      (prevIndex) =>
-                                        (prevIndex -
+                                      (prev) =>
+                                        (prev -
                                           1 +
                                           futureSubscriptions.length) %
                                         futureSubscriptions.length
@@ -603,9 +810,8 @@ export default function ClientDrawer({
                                 <button
                                   onClick={() =>
                                     setCurrentFuturePlanIndex(
-                                      (prevIndex) =>
-                                        (prevIndex + 1) %
-                                        futureSubscriptions.length
+                                      (prev) =>
+                                        (prev + 1) % futureSubscriptions.length
                                     )
                                   }
                                   className="rounded-md p-1 text-[#667085] hover:bg-[#f2f4f7]"
@@ -614,11 +820,13 @@ export default function ClientDrawer({
                                   <ChevronRight className="h-4 w-4" />
                                 </button>
                               </div>
-                            )}
-                            {futureSubscriptions.length === 1 && (
-                              <div className="text-xs font-medium text-gray-600">{`1 / 1`}</div>
+                            ) : (
+                              <div className="text-xs font-medium text-gray-600">
+                                1 / 1
+                              </div>
                             )}
                           </div>
+
                           <button
                             className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-[#344054] hover:bg-[#f2f4f7]"
                             onClick={() => cancelFutureSubscription()}
@@ -627,27 +835,26 @@ export default function ClientDrawer({
                             Cancel
                           </button>
                         </div>
-                        {
-                          <div className="flex flex-row justify-between px-5 py-3 mb-2 w-full">
-                            <div className="flex-[1] text-base font-semibold text-[#101828]">
-                              {sub.plan_name}
-                            </div>
-                            <div className="flex-[2]">
-                              <Info
-                                label="Period"
-                                value={`${formatDateToReadable(
-                                  sub.start_date
-                                )} - ${formatDateToReadable(sub.end_date)}`}
-                              />
-                            </div>
-                            <div className="flex-[1]">
-                              <Info
-                                label="Amount Received"
-                                value={`₹ ${sub?.amount_paid ?? "None"}/-`}
-                              />
-                            </div>
+
+                        <div className="flex flex-row justify-between px-5 py-3 mb-2 w-full">
+                          <div className="flex-[1] text-base font-semibold text-[#101828]">
+                            {sub.plan_name}
                           </div>
-                        }
+                          <div className="flex-[2]">
+                            <Info
+                              label="Period"
+                              value={`${formatDateToReadable(
+                                sub.start_date
+                              )} - ${formatDateToReadable(sub.end_date)}`}
+                            />
+                          </div>
+                          <div className="flex-[1]">
+                            <Info
+                              label="Amount Received"
+                              value={`₹ ${sub.amount_paid ?? "None"}/-`}
+                            />
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
@@ -664,58 +871,12 @@ export default function ClientDrawer({
                 </div>
               )}
 
-              {/* Past plans */}
-              {pastSubscriptions ? (
-                <div className="rounded-lg border border-[#e4e7ec] bg-white">
-                  <div className="flex flex-row justify-between">
-                    <div className="flex-[2] border-b border-[#f2f4f7] px-5 py-3 text-xs font-medium text-[#667085]">
-                      Past plans
-                    </div>
-                    <div className="flex-[5] border-b border-[#f2f4f7] px-5 py-3 text-xs font-medium text-[#667085]">
-                      Period
-                    </div>
-                    <div className="flex-[2] border-b border-[#f2f4f7] px-5 py-3 text-xs font-medium text-[#667085]">
-                      Paid
-                    </div>
-                  </div>
-                  <div className="divide-y divide-[#f2f4f7]">
-                    {
-                      <div
-                        className={`flex flex-col gap-2 ${
-                          pastSubscriptions?.length > 3
-                            ? "max-h-64 overflow-y-auto pr-2 thin-scrollbar"
-                            : ""
-                        }`}
-                      >
-                        {pastSubscriptions?.length > 0 &&
-                          pastSubscriptions.map((sub, index) => (
-                            <Row
-                              key={index}
-                              plan={sub.plan_type!}
-                              period={`${formatDateToReadable(
-                                sub.start_date
-                              )} - ${formatDateToReadable(sub.end_date)}`}
-                              amount={`₹ ${sub.amount_paid ?? "None"}/-`}
-                            />
-                          ))}
-                      </div>
-                    }
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-[#e4e7ec] bg-white">
-                  <div className="flex items-center justify-between border-b border-[#f2f4f7] px-5 py-3">
-                    <div className="flex flex-row gap-2 items-center">
-                      <div className="text-xs font-medium text-[#667085]/70">
-                        No Past Plans
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Add Subscription UI + list of past subscriptions */}
             </TabsContent>
           </div>
         </Tabs>
+
+        {/* Edit client modal / dialog and renewal confirmation dialog */}
         <EditClient
           client={client}
           open={editClient}
@@ -723,6 +884,7 @@ export default function ClientDrawer({
           refreshClients={refreshClients}
           refreshSubsciption={refreshSubscriptions}
         />
+
         <RenewalConfirmationDialog
           open={showRenewalDialog}
           onOpenChange={setShowRenewalDialog}
@@ -735,6 +897,10 @@ export default function ClientDrawer({
     </Sheet>
   );
 }
+
+/* ====================
+   Helper Subcomponents
+   ==================== */
 
 function Tab({ value, label }: { value: string; label: string }) {
   return (
@@ -780,13 +946,16 @@ function Row({
   amount: string;
 }) {
   return (
-    <div className={`flex flex-row px-5 py-3 text-sm`}>
+    <div
+      className={`flex flex-row px-5 py-3 text-sm border-b border-[#f2f4f7]`}
+    >
       <div className="flex-[3] text-[#101828]">{plan}</div>
       <div className="flex-[7] text-sm text-gray-700">{period}</div>
       <div className="flex-[2] text-sm text-gray-700">{amount}</div>
     </div>
   );
 }
+
 function ToolbarBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <button
@@ -799,27 +968,34 @@ function ToolbarBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
   );
 }
 
-function formatDateToReadable(dateString: string | null | undefined) {
-  if (!dateString || dateString == undefined) return null;
+/* Format ISO date to "1st Jan 2024" style */
+function formatDateToReadable(dateString?: string | null) {
+  if (!dateString) return "—";
+  try {
+    const date = parseISO(dateString);
+    const day = format(date, "d");
+    const month = format(date, "MMM");
+    const year = format(date, "yyyy");
 
-  const date = parseISO(dateString);
+    const suffix =
+      day.endsWith("1") && day !== "11"
+        ? "st"
+        : day.endsWith("2") && day !== "12"
+        ? "nd"
+        : day.endsWith("3") && day !== "13"
+        ? "rd"
+        : "th";
 
-  const day = format(date, "d");
-  const month = format(date, "MMM");
-  const year = format(date, "yyyy");
-
-  const suffix =
-    day.endsWith("1") && day !== "11"
-      ? "st"
-      : day.endsWith("2") && day !== "12"
-      ? "nd"
-      : day.endsWith("3") && day !== "13"
-      ? "rd"
-      : "th";
-
-  return `${day}${suffix} ${month} ${year}`;
+    return `${day}${suffix} ${month} ${year}`;
+  } catch {
+    return dateString;
+  }
 }
 
+/* -------------------------
+   ContractViewer Component
+   (Inlined — uses createSignedUrlAPI)
+   ------------------------- */
 function ContractViewer({
   url,
   fileName = "Contract Document",
@@ -827,68 +1003,57 @@ function ContractViewer({
   url: string;
   fileName?: string;
 }) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-const [signedUrl, setSignedUrl] = useState<string | null>(null);
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
+  const handleDownload = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-const handleDownload = async () => {
-  try {
-    setLoading(true);
-    setError(null);
+      const res = await createSignedUrlAPI(url);
+      const downloadUrl = res?.signed_url;
+      if (!downloadUrl) throw new Error("Failed to get signed URL");
 
-    const res = await createSignedUrlAPI(url);
-    const downloadUrl = res.signed_url;
+      const response = await fetch(downloadUrl);
+      if (!response.ok) throw new Error("Failed to fetch file");
 
-    if (!downloadUrl) throw new Error("Failed to get signed URL");
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName || "download";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("handleDownload", err);
+      setError("Failed to download file.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Fetch the file content as a blob
-    const response = await fetch(downloadUrl);
-    if (!response.ok) throw new Error("Failed to fetch file");
+  const handlePreview = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const blob = await response.blob();
+      const res = await createSignedUrlAPI(url);
+      const previewUrl = res?.signed_url;
+      if (!previewUrl) throw new Error("Failed to get signed URL");
 
-    // Create a local URL for the blob
-    const blobUrl = window.URL.createObjectURL(blob);
-
-    // Create a link and trigger download
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = fileName || "download"; // fallback filename
-    document.body.appendChild(link);
-    link.click();
-
-    // Cleanup
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(blobUrl);
-  } catch (err) {
-    setError("Failed to download file.");
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-const handlePreview = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    const res = await createSignedUrlAPI(url);
-    const previewUrl = res.signed_url;
-
-    if (!previewUrl) throw new Error("Failed to get signed URL");
-
-    setSignedUrl(previewUrl);
-    window.open(previewUrl, "_blank");
-  } catch (err) {
-    setError("Failed to open preview.");
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
-
+      setSignedUrl(previewUrl);
+      window.open(previewUrl, "_blank");
+    } catch (err) {
+      console.error("handlePreview", err);
+      setError("Failed to open preview.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="rounded-lg border border-[#e4e7ec] bg-white shadow-sm">
@@ -907,6 +1072,7 @@ const handlePreview = async () => {
               </div>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -929,7 +1095,7 @@ const handlePreview = async () => {
           </div>
         </div>
 
-        {/* Preview content */}
+        {/* Preview area */}
         <div className="rounded-md border border-[#e4e7ec] overflow-hidden">
           <div className="p-8 text-center bg-[#f9fafb]">
             <FileText className="h-12 w-12 text-[#667085] mx-auto mb-3" />
@@ -950,12 +1116,13 @@ const handlePreview = async () => {
                 variant="outline"
                 size="sm"
                 onClick={handleDownload}
-                className="text-xs"               
+                className="text-xs"
               >
                 <Download className="h-3 w-3 mr-1" />
                 Download
               </Button>
             </div>
+            {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
           </div>
         </div>
       </div>

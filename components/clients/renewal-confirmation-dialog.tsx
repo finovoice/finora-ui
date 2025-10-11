@@ -1,393 +1,427 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Button } from "@/components/ui/button"
+import * as React from "react";
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import { useEffect, useState } from "react"
-import { RefreshCcw, X, ChevronDown } from "lucide-react"
-import { ClientType, EditableClient, SubscriptionType } from "@/constants/types"
-import { Info } from "../clients/client-drawer" // Assuming Info component is exported from client-drawer
-import { showToast } from "../ui/toast-manager"
-import { sub } from "date-fns"
-import { createSubscriptionAPI, getSubscriptionByClientIDAPI } from "@/services/subscription"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { editCientAPI } from "@/services/clients"
-import { getCurrentSubscriptionFromList } from "@/lib/getCurrentSubscriptionFromList"
-import { getFutureSubscriptionsFromList } from "@/lib/getFutureSubscriptionFromList"
-import { getPastSubscriptionFromList } from "@/lib/getPastSubscriptionFromList"
-import { start } from "repl"
+  ClientType,
+  EditableClient,
+  SubscriptionType,
+} from "@/constants/types";
+import { showToast } from "../ui/toast-manager";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { editCientAPI } from "@/services/clients";
+import { createSubscriptionAPI } from "@/services/subscription";
+import { getCurrentSubscriptionFromList } from "@/lib/getCurrentSubscriptionFromList";
+import { getPlansAPI, PlanType } from "@/services/plan";
 
 interface RenewalConfirmationDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    client: ClientType;
-    subscriptionList: SubscriptionType[] | [];
-    refreshSubscriptions: (clientID: string) => void;
-    refreshClients: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  client: ClientType;
+  subscriptionList: SubscriptionType[] | [];
+  refreshSubscriptions: (clientID: string) => void;
+  refreshClients: () => void;
 }
 
 export function RenewalConfirmationDialog({
-    open,
-    onOpenChange,
-    client,
-    subscriptionList,
-    refreshSubscriptions,
-    refreshClients
+  open,
+  onOpenChange,
+  client,
+  subscriptionList,
+  refreshSubscriptions,
+  refreshClients,
 }: RenewalConfirmationDialogProps) {
-    const [sending, setSending] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editedPlanName, setEditedPlanName] = useState<string>('');
-    const [editedAmount, setEditedAmount] = useState('0');
-    const [editedPlanType, setEditedPlanType] = useState<string>('');
-    const [editedPeriod, setEditedPeriod] = useState<string>('');
-    const [nextSubscription, setNextSubscription] = useState<SubscriptionType | null>(null);
+  const [plans, setPlans] = useState<PlanType[]>([]);
+  const [sending, setSending] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-    const [currentSubscription, setCurrentSubscription] = useState<SubscriptionType | null>(null);
-    const [futureSubscriptions, setFutureSubscriptions] = useState<SubscriptionType[] | null>(null);
-    const [pastSubscriptions, setPastSubscriptions] = useState<SubscriptionType[] | null>(null)
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [editedPlanName, setEditedPlanName] = useState<string>("");
+  const [editedAmount, setEditedAmount] = useState<string>("");
+  const [editedPeriod, setEditedPeriod] = useState<string>("");
 
-    useEffect(() => {
-        setCurrentSubscription(getCurrentSubscriptionFromList(subscriptionList))
-        setFutureSubscriptions(getFutureSubscriptionsFromList(subscriptionList))
-        setPastSubscriptions(getPastSubscriptionFromList(subscriptionList))
+  const [currentSubscription, setCurrentSubscription] =
+    useState<SubscriptionType | null>(null);
 
-        if (subscriptionList.length > 0) {
-            setEditedAmount(subscriptionList[0].amount_paid)
-            setEditedPlanName(subscriptionList[0].plan_name)
-            setEditedPlanType(subscriptionList[0].plan_type!)
-            setEditedPeriod(subscriptionList[0].plan_name.split(' ')[1])
-        }
-    }, [subscriptionList])
+  // Load plans on mount
+  useEffect(() => {
+    async function fetchPlans() {
+      try {
+        const fetched = await getPlansAPI();
+        setPlans(fetched);
+      } catch (err) {
+        console.error("Error fetching plans:", err);
+        showToast({
+          title: "Error",
+          description: "Could not load plans",
+          type: "error",
+        });
+      }
+    }
+    fetchPlans();
+  }, []);
 
-    const handleConfirmRenewal = async () => {
+  // Whenever subscriptionList or plans change, derive current subscription and set defaults
+  useEffect(() => {
+    const current = getCurrentSubscriptionFromList(subscriptionList);
+    setCurrentSubscription(current);
 
-        const currentSubscriptions = currentSubscription
-        let start_date
-        let end_date
-        let futurePlan = false;
+    if (subscriptionList.length > 0) {
+      const latest = subscriptionList[0];
+      setEditedAmount(String(latest.amount_paid ?? "0"));
+      setEditedPlanName(latest.plan_name ?? "");
 
-        if (subscriptionList.length > 0) {
-            start_date = new Date(new Date(subscriptionList[0].end_date).getTime() + 86400000).toISOString().slice(0, 10);
-            end_date = getFutureDate(editedPeriod, start_date)
-        } else {
-            start_date = new Date().toISOString().slice(0, 10)
-            end_date = getFutureDate(editedPeriod, start_date)
-        }
+      // Try find matching plan by name
+      const matching = plans.find((p) => p.name === latest.plan_name);
+      if (matching) {
+        setSelectedPlanId(String(matching.id));
+        setEditedPeriod(matching.renewal_period ?? "");
+      } else {
+        // fallback if no match
+        setEditedPeriod(latest.plan_name?.split(" ")[1] || "");
+      }
+    }
+  }, [subscriptionList, plans]);
 
-        if (currentSubscription) {
-            futurePlan = true
-        }
+  const handlePlanChange = (planId: string) => {
+    setSelectedPlanId(planId);
+    if (!planId) {
+      setEditedPeriod("");
+      setEditedPlanName("");
+      return;
+    }
+    const planObj = plans.find((p) => String(p.id) === planId);
+    if (planObj) {
+      setEditedPeriod(planObj.renewal_period || "");
+      setEditedPlanName(planObj.name);
+    } else {
+      setEditedPeriod("");
+      setEditedPlanName("");
+    }
+  };
 
-        setSending(true);
-
-        try {
-            const updateSubscription: SubscriptionType = {
-                plan: '1',
-                created_by: client.assigned_rm.id,
-                client: client.id,
-                start_date: start_date,
-                end_date: end_date,
-                amount_paid: editedAmount,
-                client_email: client.email,
-                plan_name: editedPlanName,
-                plan_type: editedPlanType.toUpperCase()
-
-            }
-            const response = await createSubscriptionAPI(updateSubscription);
-            showToast({
-                title: 'Success',
-                description: `Successfully created a ${futurePlan ? 'future' : ''} subscription`,
-                type: 'success',
-                duration: 4000
-            })
-
-            try {
-                if (!futurePlan) {
-                    const updateClient: EditableClient = {
-                        plan: editedPlanType
-                    }
-
-                    const clientResponse = await editCientAPI(updateClient, client.id)
-                    showToast({
-                        title: 'Success',
-                        description: 'Successfully updated client',
-                        type: 'success',
-                        duration: 4000
-                    })
-                }
-            }
-            catch (e) {
-                showToast({
-                    title: 'Error',
-                    description: 'Could not update client',
-                    type: 'error',
-                    duration: 4000
-                })
-            }
-            refreshSubscriptions(client.id)
-            refreshClients()
-
-        } catch (e) {
-            showToast({
-                title: 'Error',
-                description: 'Error in creating Subscription',
-                type: 'error',
-                duration: 5000
-            })
-        } finally {
-            setEditedAmount('0')
-            setSending(false);
-            onOpenChange(false);
-        }
-    };
-
-    const handleEditConfirm = () => {
-        setEditedPlanName(editedPlanType
-            + ' ' + editedPeriod)
-        setIsEditing(false);
-    };
-
-    const handleEditBack = () => {
-        setIsEditing(false);
-    };
-
-    const planOptions = ["Elite", "Premium", "Standard"];
-    const periodOptions = ["Monthly", "Quarterly", "Weekly"];
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] w-2xl p-0">
-                <DialogHeader className="flex flex-row items-center justify-between px-6 pt-4 pb-1">
-                    <DialogTitle className="text-[18px] font-medium text-[#101828]">Plan details</DialogTitle>
-                </DialogHeader>
-                {isEditing ? (
-                    <div className="px-6 py-2 pt-0 -mt-2 space-y-5">
-                        {/* Plan */}
-                        <div className="space-y-1">
-                            <Label className="text-[#344054] text-sm">
-                                Plan <span className="text-[#7f56d9]">*</span>
-                            </Label>
-                            <Select value={editedPlanType === '' ? undefined : editedPlanType.charAt(0).toUpperCase() + editedPlanType.slice(1).toLowerCase()} onValueChange={(e) => {
-                                setEditedPlanType(e);
-                            }}>
-                                <SelectTrigger className="h-11 w-full rounded-md border-[#e4e7ec]">
-                                    <SelectValue placeholder="Select a plan" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {planOptions.map((planOpt) => (
-                                        <SelectItem key={planOpt} value={planOpt}>
-                                            {planOpt}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Amount */}
-                        <div className="space-y-1">
-                            <Label className="text-[#344054] text-sm">
-                                Amount received <span className="text-[#7f56d9]">*</span>
-                            </Label>
-                            <div className="relative">
-                                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]">₹</span>
-                                <Input
-                                    value={editedAmount}
-                                    onChange={(e) => {
-                                        setEditedAmount(String(Number(e.target.value.replace(/[^0-9]/g, "")) || 0));
-                                    }}
-                                    className="h-11 pl-8 rounded-md border-[#e4e7ec]"
-                                    inputMode="numeric"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {/* Period */}
-                        <div className="space-y-1">
-                            <Label className="text-[#344054] text-sm">
-                                Renewal period <span className="text-[#7f56d9]">*</span>
-                            </Label>
-                            <Select value={editedPeriod} onValueChange={(e) => {
-                                setEditedPeriod(e);
-                            }}>
-                                <SelectTrigger className="h-11 w-full rounded-md border-[#e4e7ec]">
-                                    <SelectValue placeholder="Select a period" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {periodOptions.map((periodOpt) => (
-                                        <SelectItem key={periodOpt} value={periodOpt}>
-                                            {periodOpt}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex flex-col gap-3 pt-4">
-                            <Button
-                                type="button"
-                                className="w-full bg-[#7F56D9] text-white hover:bg-[#6941C6]"
-                                onClick={handleEditConfirm}
-                            >
-                                Confirm
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full text-[#344054] border-[#D0D5DD] hover:bg-[#F9FAFB]"
-                                onClick={handleEditBack}
-                            >
-                                Back
-                            </Button>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <div className="p-4 space-y-4 bg-gray-100 mx-5 rounded-sm">
-                            <Info label="Chosen plan" value={editedPlanName === '' ? 'Not Set' : editedPlanName} />
-                            <Info label="Amount paid" value={<span>{`₹ ${editedAmount ?? 'N/A'}/-`}</span>} />
-                            <Info label="Renewal duration" value={editedPeriod === '' ? "Not Set" : editedPeriod} />
-                        </div>
-                        <DialogFooter className="flex flex-col sm:flex-col gap-3 px-6 py-3 pt-0">
-                            <Button
-                                type="button"
-                                className="w-full bg-[#7F56D9] text-white hover:bg-[#6941C6]"
-                                onClick={handleConfirmRenewal}
-                                disabled={sending || editedAmount == '0'}
-                            >
-                                {sending ? "Confirming..." : "Confirm"}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full text-[#344054] border-[#D0D5DD] hover:bg-[#F9FAFB]"
-                                onClick={() => setIsEditing(true)}
-                            >
-                                Edit
-                            </Button>
-                        </DialogFooter>
-                    </>
-                )}
-            </DialogContent>
-        </Dialog>
-    )
-}
-
-
-export function getFutureDate(interval?: string | null, startDate?: string | Date | null): string {
-    const normalized = interval?.toLowerCase() ?? 'weekly';
-
-    const daysToAdd = {
+  const getFutureDate = (
+    interval?: string | null,
+    startDate?: string | Date | null
+  ): string => {
+    const normalized = interval?.toLowerCase() ?? "weekly";
+    const daysToAdd =
+      {
         weekly: 7,
         monthly: 30,
         quarterly: 90,
         yearly: 365,
-    }[normalized] ?? 7;
+      }[normalized] ?? 7;
 
     const future = startDate ? new Date(startDate) : new Date();
     future.setUTCDate(future.getUTCDate() + daysToAdd);
     future.setUTCHours(0, 0, 0, 0);
 
-    return future.toISOString().slice(0, 10); // Returns 'YYYY-MM-DD'
-}
+    return future.toISOString().slice(0, 10);
+  };
 
-function isValidSubscription(sub: Partial<SubscriptionType>): sub is SubscriptionType {
-    let isValid = true;
+  const isValidSubscription = (
+    sub: Partial<SubscriptionType>
+  ): sub is SubscriptionType => {
+    let ok = true;
+    if (typeof sub.plan !== "string") {
+      ok = false;
+    }
+    if (typeof sub.created_by !== "string") {
+      ok = false;
+    }
+    if (typeof sub.client !== "string") {
+      ok = false;
+    }
+    if (typeof sub.start_date !== "string") {
+      ok = false;
+    }
+    if (typeof sub.end_date !== "string") {
+      ok = false;
+    }
+    if (
+      !(
+        typeof sub.amount_paid === "string" ||
+        typeof sub.amount_paid === "number"
+      )
+    ) {
+      ok = false;
+    }
+    if (typeof sub.client_email !== "string") {
+      ok = false;
+    }
+    if (typeof sub.plan_name !== "string") {
+      ok = false;
+    }
+    return ok;
+  };
 
-    if (typeof sub.plan !== 'string') {
-        showToast({
-            title: 'Invalid field: plan',
-            description: 'Expected a string for "plan".',
-            type: 'error',
-            duration: 4000
-        });
-        isValid = false;
+  const handleConfirmRenewal = async () => {
+    setSending(true);
+
+    const latest = subscriptionList[0];
+    const futurePlan = !!currentSubscription;
+
+    const latestEndDateValid =
+      latest?.end_date && !isNaN(Date.parse(latest.end_date))
+        ? latest.end_date
+        : null;
+
+    const startDate = latestEndDateValid
+      ? new Date(new Date(latestEndDateValid).getTime() + 86400000)
+          .toISOString()
+          .slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+
+    const endDate = getFutureDate(editedPeriod, startDate);
+
+    const chosenPlan = plans.find((p) => String(p.id) === selectedPlanId);
+    if (!chosenPlan) {
+      showToast({
+        title: "Error",
+        description: "Please select a valid plan",
+        type: "error",
+      });
+      setSending(false);
+      return;
     }
 
-    if (typeof sub.created_by !== 'string') {
-        showToast({
-            title: 'Invalid field: created_by',
-            description: 'Expected a string for "created_by".',
-            type: 'error',
-            duration: 4000
-        });
-        isValid = false;
+    const payload: SubscriptionType = {
+      plan: String(chosenPlan.id),
+      created_by: String(client.assigned_rm?.id ?? ""),
+      client: String(client.id),
+      start_date: startDate,
+      end_date: endDate,
+      amount_paid: editedAmount,
+      client_email: String(client.email),
+      plan_name: chosenPlan.name,
+      plan_type: chosenPlan.type ?? "",
+      is_active: !futurePlan,
+    };
+
+    if (!isValidSubscription(payload)) {
+      setSending(false);
+      return;
     }
 
-    if (typeof sub.client !== 'string') {
-        showToast({
-            title: 'Invalid field: client_id',
-            description: 'Expected a string for "client_id".',
-            type: 'error',
-            duration: 4000
-        });
-        isValid = false;
-    }
+    try {
+      await createSubscriptionAPI(payload);
 
-    if (typeof sub.start_date !== 'string') {
-        showToast({
-            title: 'Invalid field: start_date',
-            description: 'Expected a string for "start_date".',
-            type: 'error',
-            duration: 4000
-        });
-        isValid = false;
-    }
+      showToast({
+        title: "Success",
+        description: `Subscription created${futurePlan ? " (future)" : ""}`,
+        type: "success",
+      });
 
-    if (typeof sub.end_date !== 'string') {
-        showToast({
-            title: 'Invalid field: end_date',
-            description: 'Expected a string for "end_date".',
-            type: 'error',
-            duration: 4000
-        });
-        isValid = false;
-    }
+      if (!futurePlan) {
+        const updateClient: EditableClient = {
+          plan: chosenPlan.type ?? "",
+        };
+        try {
+          await editCientAPI(updateClient, client.id);
+          showToast({
+            title: "Success",
+            description: "Client plan updated",
+            type: "success",
+          });
+        } catch (e) {
+          showToast({
+            title: "Error",
+            description: "Failed to update client plan",
+            type: "error",
+          });
+        }
+      }
 
-    if (!(typeof sub.amount_paid === 'string' || typeof sub.amount_paid === 'number')) {
-        showToast({
-            title: 'Invalid field: amount_paid',
-            description: 'Expected a string or number for "amount_paid".',
-            type: 'error',
-            duration: 4000
-        });
-        isValid = false;
+      refreshSubscriptions(client.id);
+      refreshClients();
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      showToast({
+        title: "Error",
+        description: "Failed to create subscription",
+        type: "error",
+      });
+    } finally {
+      setSending(false);
+      setIsEditing(false);
+      onOpenChange(false);
     }
+  };
 
-    if (typeof sub.client_email !== 'string') {
-        showToast({
-            title: 'Invalid field: client_email',
-            description: 'Expected a string for "client_email".',
-            type: 'error',
-            duration: 4000
-        });
-        isValid = false;
-    }
+  const handleEditConfirm = () => {
+    const planObj = plans.find((p) => String(p.id) === selectedPlanId);
+    const pName = planObj ? planObj.name : "";
+    setEditedPlanName(pName);
+    setIsEditing(false);
+  };
 
-    if (typeof sub.plan_name !== 'string') {
-        showToast({
-            title: 'Invalid field: plan_name',
-            description: 'Expected a string for "plan_name".',
-            type: 'error',
-            duration: 4000
-        });
-        isValid = false;
-    }
+  const onAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cleaned = e.target.value.replace(/\D/g, "");
+    setEditedAmount(cleaned);
+  };
 
-    return isValid;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px] w-full p-0">
+        <DialogHeader className="flex items-center justify-between px-6 pt-4 pb-1">
+          <DialogTitle className="text-[18px] font-medium text-[#101828]">
+            Plan details
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="px-6 py-4 space-y-5">
+          {isEditing ? (
+            <>
+              <div className="space-y-1">
+                <Label className="text-[#344054] text-sm">
+                  Plan <span className="text-[#7f56d9]">*</span>
+                </Label>
+                <Select value={selectedPlanId} onValueChange={handlePlanChange}>
+                  <SelectTrigger className="h-11 rounded-md border-[#e4e7ec]">
+                    <SelectValue placeholder="Select a plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.length === 0 ? (
+                      <SelectItem value="" disabled>
+                        Loading plans...
+                      </SelectItem>
+                    ) : (
+                      plans.map((pl) => (
+                        <SelectItem key={pl.id} value={String(pl.id)}>
+                          {pl.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[#344054] text-sm">
+                  Amount received <span className="text-[#7f56d9]">*</span>
+                </Label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]">
+                    ₹
+                  </span>
+                  <Input
+                    value={editedAmount}
+                    onChange={onAmountChange}
+                    className="h-11 pl-8 rounded-md border-[#e4e7ec] w-full"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[#344054] text-sm">
+                  Renewal period <span className="text-[#7f56d9]">*</span>
+                </Label>
+                <Input
+                  disabled
+                  value={editedPeriod || "Not Set"}
+                  className="h-11 rounded-md border-[#e4e7ec] bg-gray-100 w-full"
+                />
+              </div>
+
+              <DialogFooter className="flex justify-end gap-3 pt-6">
+                <Button
+                  type="button"
+                  className="bg-[#7F56D9] text-white hover:bg-[#6941C6]"
+                  onClick={handleEditConfirm}
+                  disabled={
+                    !selectedPlanId || editedAmount === "0" || !editedPeriod
+                  }
+                >
+                  Confirm
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="text-[#344054] border-[#D0D5DD] hover:bg-gray-50"
+                  onClick={() => setIsEditing(false)}
+                  disabled={sending}
+                >
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <div className="space-y-1">
+                <Label className="text-[#344054] text-sm">Plan</Label>
+                <Input
+                  disabled
+                  value={editedPlanName || "N/A"}
+                  className="h-11 rounded-md border-[#e4e7ec] bg-gray-100 w-full"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[#344054] text-sm">
+                  Amount received
+                </Label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]">
+                    ₹
+                  </span>
+                  <Input
+                    disabled
+                    value={editedAmount || "0"}
+                    className="h-11 pl-8 rounded-md border-[#e4e7ec] bg-gray-100 w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[#344054] text-sm">Renewal period</Label>
+                <Input
+                  disabled
+                  value={editedPeriod || "N/A"}
+                  className="h-11 rounded-md border-[#e4e7ec] bg-gray-100 w-full"
+                />
+              </div>
+
+              <DialogFooter className="flex gap-3 pt-6">
+                <Button
+                  type="button"
+                  className="flex-1 bg-[#7F56D9] text-white hover:bg-[#6941C6]"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 bg-[#7F56D9] text-white hover:bg-[#6941C6]"
+                  onClick={handleConfirmRenewal}
+                  disabled={sending}
+                >
+                  Confirm renewal
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
