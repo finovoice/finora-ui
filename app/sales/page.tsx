@@ -38,7 +38,6 @@ export default function SalesPage() {
     openDrawerForLead,
     closeDrawer,
     toggleAddLead,
-    toggleColumnCollapse,
     setSelectedPlan,
     setSelectedLeadQuality,
     setSearchQuery,
