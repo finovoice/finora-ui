@@ -57,7 +57,8 @@ const ApiClient = () => {
 const getAuthToken = (): string | null => {
   try {
     const token = store.get(accessTokenAtom);
-    return String(token);
+    if (typeof token === "string") return token;
+    return null;
   } catch (error) {
     console.error("Failed to get token from Jotai atom", error);
     return null;

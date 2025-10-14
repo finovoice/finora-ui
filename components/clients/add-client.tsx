@@ -36,6 +36,7 @@ import { getNextRenewalDate, renewalPeriodMap, Renewal } from "@/utils/date";
 import { createSubscriptionAPI } from "@/services/subscription";
 import { USER_DATA_KEY, userAtom } from "@/hooks/user-atom";
 import { useAtom } from "jotai";
+import DatePicker from "../ui/DatePicker";
 
 type Props = {
   open: boolean;
@@ -595,7 +596,7 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-3xl w-3xl p-0 overflow-hidden rounded-xl">
+      <DialogContent className="max-w-3xl w-3xl p-0 overflow-visible rounded-xl">
         <DialogHeader className="border-b border-[#e4e7ec] px-6 py-4 flex flex-row items-center justify-between">
           <DialogTitle className="text-md font-medium text-[#101828]">
             Add clients(s)
@@ -701,28 +702,13 @@ export default function AddClient({ open, setOpen, refreshClients }: Props) {
                 <Label className="text-sm text-[#344054]">
                   DOB <span className="text-red-500">*</span>
                 </Label>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="h-10 rounded-md border-[#e4e7ec] flex-grow"
-                    max="2007-12-31"
-                    min="1925-01-01"
-                  />
-                  {date === "" && (
-                    <Calendar
-                      className="text-gray-400"
-                      size={20}
-                      aria-hidden="true"
-                    />
-                  )}
-                </div>
-                {!isValidDate(date) && date !== "" && (
-                  <p className="text-xs text-red-600 mt-1">
-                    Invalid date format or out of range
-                  </p>
-                )}
+                <DatePicker
+                  value={date}
+                  onChange={setDate}
+                  minDate="1925-01-01"
+                  maxDate={new Date().toISOString().slice(0, 10)}
+                  placeholder="Select Date of Birth"
+                />
               </div>
             </div>
 

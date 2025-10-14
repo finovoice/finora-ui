@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import DatePicker from "react-datepicker"; // <-- import datepicker
 import { parseISO } from "date-fns";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,8 +21,7 @@ import SigningStatus from "@/components/contracts/SigningStatus";
 import { getPlansAPI, PlanType } from "@/services/plan";
 import { getNextRenewalDate, renewalPeriodMap } from "@/utils/date";
 import type { SubscriptionType } from "@/constants/types";
-
-import "react-datepicker/dist/react-datepicker.css"; // import CSS for datepicker
+import DatePicker from "@/components/ui/DatePicker";
 
 export default function OnboardTab() {
   const {
@@ -210,24 +208,14 @@ export default function OnboardTab() {
             <Label className="text-sm text-[#344054]">
               DOB <span className="text-red-500">*</span>
             </Label>
-            <DatePicker
-              selected={dobDate}
-              onChange={(date) => {
-                if (date instanceof Date && !isNaN(date.getTime())) {
-                  setDob(date.toISOString().slice(0, 10));
-                } else {
-                  setDob("");
-                }
-              }}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="yyyy-mm-dd"
-              className="h-10 rounded-md border border-[#e4e7ec] w-full px-3"
-              disabled={sending}
-              maxDate={new Date()} // cannot pick future DOB
-              showYearDropdown
-              scrollableYearDropdown
-              yearDropdownItemNumber={100}
-            />
+             <DatePicker
+        value={dob || ""}
+        onChange={(dateStr: string) => setDob(dateStr)}
+        placeholder="yyyy-mm-dd"
+        disabled={sending}
+        maxDate={new Date().toISOString().slice(0, 10)} // today max
+        label={<>DOB <span className="text-red-500">*</span></>}
+      />
           </div>
         </div>
 
