@@ -88,6 +88,7 @@ export default function ClientsPage() {
     "Standard",
     "Premium",
   ];
+
   const riskProfileOptions: ("High" | "Aggressive" | "Conservative")[] = [
     "High",
     "Aggressive",
