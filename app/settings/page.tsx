@@ -20,6 +20,7 @@ import {
 import { useAtom } from "jotai";
 import { userAtom } from "@/hooks/user-atom";
 import { showToast } from "@/components/ui/toast-manager";
+import { getAllUsers } from "@/services/clients";
 
 type SettingsTab = "Organization" | "User profile";
 
@@ -36,51 +37,50 @@ export default function SettingsPage() {
     PREMIUM: "Premium",
     ELITE: "Elite",
   };
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: "e1",
-      firstName: "Olivia",
-      lastName: "Rhye",
-      email: "name@email.com",
-      role: "Relationship Manager",
-      status: {
-        label: "Invited",
-        color: "#6941c6",
-        bg: "#f9f5ff",
-        border: "#e9d7fe",
-      },
-      lastLogin: "N/A",
-    },
-    {
-      id: "e2",
-      firstName: "Phoenix",
-      lastName: "Baker",
-      email: "name@email.com",
-      role: "Relationship Manager",
-      status: {
-        label: "Active",
-        color: "#027a48",
-        bg: "#ecfdf3",
-        border: "#abefc6",
-      },
-      lastLogin: "24th Apr 2025",
-    },
-    {
-      id: "e3",
-      firstName: "Candice",
-      lastName: "Wu",
-      email: "name@email.com",
-      role: "Research Analyst",
-      status: {
-        label: "Active",
-        color: "#027a48",
-        bg: "#ecfdf3",
-        border: "#abefc6",
-      },
-      lastLogin: "24th Apr 2025",
-    },
-  ]);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const users = await getAllUsers();
+
+        const mappedEmployees: Employee[] = users.map((user) => {
+          const [firstName, lastName = ""] = user.email
+            .split("@")[0]
+            .split(".");
+          return {
+            id: user.id.toString(),
+            firstName:
+              firstName?.charAt(0).toUpperCase() + firstName?.slice(1) ||
+              "Unknown",
+            lastName:
+              lastName?.charAt(0).toUpperCase() + lastName?.slice(1) || "",
+            email: user.email,
+            role:
+              user.type === "RM"
+                ? "Relationship Manager"
+                : user.type === "RA"
+                ? "Research Analyst"
+                : "Admin",
+            status: {
+              label: user.is_admin || user.is_org_admin ? "Active" : "Invited",
+              color: user.is_admin || user.is_org_admin ? "#027a48" : "#6941c6",
+              bg: user.is_admin || user.is_org_admin ? "#ecfdf3" : "#f9f5ff",
+              border:
+                user.is_admin || user.is_org_admin ? "#abefc6" : "#e9d7fe",
+            },
+            lastLogin: "N/A", // You can update this once backend provides it
+          };
+        });
+
+        setEmployees(mappedEmployees);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
   const [employeeDialogOpen, setEmployeeDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [confirmEmployeeId, setConfirmEmployeeId] = useState<string | null>(
@@ -178,15 +178,6 @@ export default function SettingsPage() {
                       <h2 className="text-sm font-medium text-[#344054]">
                         Employees
                       </h2>
-                      <button
-                        onClick={() => {
-                          setEditingEmployee(null);
-                          setEmployeeDialogOpen(true);
-                        }}
-                        className="inline-flex items-center gap-2 rounded-md border border-[#e4e7ec] bg-white px-2 py-1 text-xs text-[#344054] hover:bg-[#f2f4f7]"
-                      >
-                        <Plus className="h-3 w-3" /> Add
-                      </button>
                     </div>
                   </div>
                   <div>
@@ -488,22 +479,6 @@ function EmployeesRow({
       </div>
       <div className="text-[#344054]">{role}</div>
       <div className="text-[#667085]">{lastLogin}</div>
-      <div className="flex gap-1 justify-self-end">
-        <button
-          onClick={onEdit}
-          className="rounded-md p-1.5 hover:bg-[#f2f4f7]"
-          aria-label="edit employee"
-        >
-          <Edit className="h-4 w-4 text-[#667085]" />
-        </button>
-        <button
-          onClick={onDelete}
-          className="rounded-md p-1.5 hover:bg-[#f2f4f7]"
-          aria-label="delete employee"
-        >
-          <Trash2 className="h-4 w-4 text-[#667085]" />
-        </button>
-      </div>
     </div>
   );
 }

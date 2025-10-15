@@ -1,45 +1,57 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { useAtom } from "jotai";
-import { accessTokenAtom, useAccessTokenAtom } from "@/hooks/user-atom";
+import { useRouter, usePathname } from "next/navigation";
+import { useAccessTokenAtom } from "@/hooks/user-atom";
 
-/**
- * AuthGuard ensures that users without an access token are redirected to the login screen.
- * It allows the /login route to be accessed without a token.
- */
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [checked, setChecked] = useState(false);
-  const [token] = useAccessTokenAtom(); // Subscribe to atom here
+  const [token] = useAccessTokenAtom();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    async function checkAuth() {
-      if (token === null) {
-        // Token is still loading, do nothing and wait
-        return;
-      }
-      const isLoginPage = pathname === "/login";
+    // Initial check is complete after first render
+    setIsChecking(false);
+  }, []);
 
-      if (token && isLoginPage) {
-        // If logged in and on login page, redirecting to previous path or dashboard
-        router.replace(sessionStorage.getItem("lastPath") || "/");
-      } else if (!token && !isLoginPage) {
-        // Save the last path to return after login
-        sessionStorage.setItem("lastPath", pathname);
-        router.replace("/login");
-      } else {
-        setChecked(true);
-      }
+  useEffect(() => {
+    if (isChecking) return;
+
+    const isLoginPage = pathname === "/login";
+
+    // Only redirect if we're sure about the token state
+    if (token === null && !isLoginPage) {
+      sessionStorage.setItem("lastPath", pathname);
+      router.replace("/login");
+      return;
     }
 
-    checkAuth();
-  }, [pathname, router, token]);
+    if (token && isLoginPage) {
+      const lastPath = sessionStorage.getItem("lastPath") || "/";
+      router.replace(lastPath);
+    }
+  }, [token, pathname, router, isChecking]);
 
-  // Avoid content flash before decision
-  if (!checked) return null;
+  // Show loading only during initial check
+  if (isChecking) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
+  // If we're redirecting to login, show nothing briefly
+  if (token === null && pathname !== "/login") {
+    return null;
+  }
+
+  // If we're redirecting from login, show nothing briefly  
+  if (token && pathname === "/login") {
+    return null;
+  }
+
+  // Otherwise, show the content
   return <>{children}</>;
 }

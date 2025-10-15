@@ -11,7 +11,7 @@ export type Employee = {
   firstName: string
   lastName: string
   email: string
-  role: "Relationship Manager" | "Research Analyst"
+  role: "Relationship Manager" | "Research Analyst" | "Admin";
   status?: { label: string; color: string; bg: string; border: string }
   lastLogin?: string
 }
