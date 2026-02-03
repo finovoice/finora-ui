@@ -1,31 +1,30 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  useEffect,
-} from "react";
+import { showToast } from "@/components/ui/toast-manager";
 import {
   ClientType,
   EditableClient,
   LeadStage,
   SubscriptionType,
 } from "@/constants/types";
-import { showToast } from "@/components/ui/toast-manager";
-import { uploadFileAPI } from "@/services/upload";
+import { userAtom } from "@/hooks/user-atom";
 import { editLeadAPI } from "@/services/clients";
+import { PlanType } from "@/services/plan";
 import { createSubscriptionAPI } from "@/services/subscription";
+import { getNextRenewalDate, Renewal } from "@/utils/date";
 import {
   isValidDate,
   isValidPAN,
   isValidPositiveInteger,
 } from "@/utils/validation";
-import { getNextRenewalDate, Renewal } from "@/utils/date";
-import { getPlansAPI, PlanType } from "@/services/plan";
-import { USER_DATA_KEY, userAtom } from "@/hooks/user-atom";
 import { useAtom } from "jotai";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 export type Lead = {
   id: string;
   name: string;

@@ -1,5 +1,5 @@
 import * as Toast from '@radix-ui/react-toast';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -84,7 +84,7 @@ export const ToastManager = () => {
                 return (
                     <Toast.Root
                         key={toast.id}
-                        className={`flex items-center gap-4 min-w-80 max-w-md bg-white border border-gray-200 rounded-lg shadow-lg p-4 outline-none focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2
+                        className={`z-[9999] flex items-center gap-4 min-w-80 max-w-md bg-white border border-gray-200 rounded-lg shadow-lg p-4 outline-none focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2
                             data-[state=open]:animate-in data-[state=open]:slide-in-from-right-full data-[state=open]:duration-300
                             data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right-full data-[state=closed]:duration-200
                         `}
@@ -152,7 +152,7 @@ export const ToastManager = () => {
                 );
             })}
 
-            <Toast.Viewport className="fixed bottom-4 right-4 flex flex-col-reverse gap-2 z-[999]" />
+            <Toast.Viewport className="fixed bottom-4 right-4 flex flex-col-reverse gap-2 z-[9999]" />
         </Toast.Provider>
     );
 };
