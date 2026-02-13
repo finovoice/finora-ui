@@ -1,5 +1,6 @@
 # Finora UI
 
+
 ## Overview
 This repository contains the source code for **Finora UI** — a project that recreates a Figma-based UI with modern frontend tooling. 
 It is structured for easy local development and smooth deployment in any CI/CD pipeline.
